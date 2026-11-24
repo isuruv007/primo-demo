@@ -8,10 +8,12 @@
   <meta name="theme-color" content="#0b0d08">
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%23090a0d'/%3E%3Ccircle cx='16' cy='16' r='6' fill='%23c8ff2e'/%3E%3C/svg%3E">
   <script>(function(){try{var a={volt:'#c8ff2e',berry:'#b3a3ff',glacier:'#8fe3dc',ember:'#ffae78'},t={volt:'#0b0d08',berry:'#0c0b14',glacier:'#080d0f',ember:'#100b09'},f=localStorage.getItem('primo:flavour');if(a[f]){var s=document.documentElement.style;s.setProperty('--accent',a[f]);s.setProperty('--ink',a[f]);s.setProperty('--tint',t[f]);}}catch(e){}})();</script>
+  <script type="importmap">{ "imports": { "three": "./vendor/three.module.min.js" } }</script>
   <link rel="preload" href="fonts/spacegrotesk-V8mDoQDjQSkFtoMM3T6r8E7mPbF4C_k3HqU.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="stylesheet" href="fonts/fonts.css">
   <link rel="stylesheet" href="styles.css">
   <link rel="stylesheet" href="pages.css">
+  <script src="vendor/lenis.min.js" defer></script>
   <script src="cart.js" defer></script>
   <script src="pages.js" defer></script>
 </head>
@@ -24,7 +26,7 @@
       <a href="about.html">About</a>
       <a href="feedback.html" aria-current="page">Feedback</a>
     </div>
-    <a class="nav-cart" href="shop.html" aria-label="Cart">Cart <span class="nav-cart-count" data-cart-count>0</span></a>
+    <a class="nav-cart" href="shop.html#cart" aria-label="Cart">Cart <span class="nav-cart-count" data-cart-count>0</span></a>
   </nav>
 
   <main class="pg-main fb-wrap" id="main">
@@ -33,7 +35,7 @@
         <span class="pg-kicker" data-reveal>Feedback</span>
         <h1 class="display" data-reveal style="--d:.08s">How did it <span class="accent">taste?</span></h1>
         <p class="lede" data-reveal style="--d:.16s">Every flavour we've made changed because someone told us it was too sweet, too flat or not cold enough. Two minutes. Be blunt.</p>
-        <div class="stage" data-tilt data-reveal style="--d:.24s"><div class="stage-inner" data-bottle="theme"></div><div class="spot" aria-hidden="true"></div></div>
+        <div class="stage" data-tilt data-reveal style="--d:.24s"><div class="stage-inner" data-bottle3d="theme"></div><div class="spot" aria-hidden="true"></div></div>
       </div>
 
       <div class="glass fb-card" data-reveal style="--d:.1s">

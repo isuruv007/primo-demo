@@ -22,6 +22,7 @@
   <script src="vendor/lenis.min.js" defer></script>
   <script type="module" src="main.js"></script>
   <script type="module" src="scenes.js"></script>
+  <script type="module" src="snap.js"></script>
   <script src="cart.js" defer></script>
 </head>
 <body>
@@ -73,10 +74,11 @@
       <a href="about.html">About</a>
       <a href="feedback.html">Feedback</a>
     </div>
-    <a class="nav-cart" href="shop.html" aria-label="Cart">Cart <span class="nav-cart-count" data-cart-count>0</span></a>
+    <a class="nav-cart" href="shop.html#cart" aria-label="Cart">Cart <span class="nav-cart-count" data-cart-count>0</span></a>
   </nav>
 
   <!-- Day rail: which flavour / scene you're in -->
+  <nav class="snap-rail" aria-label="Story stops"></nav>
   <div class="day-rail" aria-hidden="true">
     <span class="rail-count"><span class="rail-num">01</span>/04</span>
     <span class="rail-name">Ember Citrus</span>
@@ -201,7 +203,7 @@
 
     <!-- A DAY ON PRIMO: four life scenes, four flavours, chosen by scrolling -->
     <div class="day" id="flavours" aria-label="Flavours: a day on PRIMO">
-      <section class="section day-intro">
+      <section class="section day-intro" data-snap>
         <p class="kicker" data-reveal><span class="dot"></span>Flavours · A day on PRIMO</p>
         <h2 data-split>Four moments. Four flavours.</h2>
         <p class="lede" data-reveal>Keep scrolling to drink your way through a day. Every scene changes the flavour, and the whole page follows.</p>

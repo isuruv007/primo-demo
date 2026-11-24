@@ -3,19 +3,21 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Shop PRIMO — Packs, subscribe & save</title>
-  <meta name="description" content="Choose a flavour and pack size, subscribe and save, and review your cart. PRIMO is a fictional brand; this checkout is a demo.">
+  <title>Shop PRIMO · Packs, subscribe &amp; save</title>
+  <meta name="description" content="Pick a flavour, spin the bottle, choose a pack and subscribe and save. PRIMO is a fictional brand; this store is a demo and nothing can be bought.">
   <meta name="theme-color" content="#0b0d08">
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%23090a0d'/%3E%3Ccircle cx='16' cy='16' r='6' fill='%23c8ff2e'/%3E%3C/svg%3E">
-  <script>(function(){try{var a={volt:'#c8ff2e',berry:'#b3a3ff',glacier:'#8fe3dc',ember:'#ffae78'},t={volt:'#0b0d08',berry:'#0c0b14',glacier:'#080d0f',ember:'#100b09'},f=localStorage.getItem('primo:flavour');if(a[f]){var s=document.documentElement.style;s.setProperty('--accent',a[f]);s.setProperty('--ink',a[f]);s.setProperty('--tint',t[f]);}}catch(e){}})();</script>
+  <script>(function(){try{var a={volt:'#c8ff2e',berry:'#b3a3ff',glacier:'#8fe3dc',ember:'#ffae78'},t={volt:'#0b0d08',berry:'#0c0b14',glacier:'#080d0f',ember:'#100b09'},f=localStorage.getItem('primo:flavour');if(a[f]){var s=document.documentElement.style;s.setProperty('--accent',a[f]);s.setProperty('--ink',a[f]);s.setProperty('--tint',t[f]);document.documentElement.setAttribute('data-flavour',f);}}catch(e){}})();</script>
+  <script type="importmap">{ "imports": { "three": "./vendor/three.module.min.js" } }</script>
   <link rel="preload" href="fonts/spacegrotesk-V8mDoQDjQSkFtoMM3T6r8E7mPbF4C_k3HqU.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="stylesheet" href="fonts/fonts.css">
   <link rel="stylesheet" href="styles.css">
   <link rel="stylesheet" href="pages.css">
+  <script src="vendor/lenis.min.js" defer></script>
   <script src="cart.js" defer></script>
   <script src="pages.js" defer></script>
 </head>
-<body class="page" data-page="shop">
+<body class="page shop" data-page="shop">
   <a class="sr-only skip" href="#main">Skip to content</a>
   <nav class="nav" id="nav">
     <a class="brand" href="index.html">PRIMO<span>.</span></a>
@@ -24,142 +26,217 @@
       <a href="about.html">About</a>
       <a href="feedback.html">Feedback</a>
     </div>
-    <a class="nav-cart" href="shop.html" aria-label="Cart">Cart <span class="nav-cart-count" data-cart-count>0</span></a>
+    <a class="nav-cart" href="shop.html#cart" aria-label="Cart">Cart <span class="nav-cart-count" data-cart-count>0</span></a>
   </nav>
 
+  <!-- Life-scene backdrop: the chosen flavour's photo, graded like the home page -->
+  <div class="sx-scenes" aria-hidden="true">
+    <picture class="sx-scene" data-scene="ember">
+      <source media="(max-width: 819px)" srcset="img/photo-1594882645126-14020914d58d-900x1600.jpg">
+      <img src="img/photo-1594882645126-14020914d58d-2000.jpg" alt="" decoding="async">
+    </picture>
+    <picture class="sx-scene" data-scene="glacier">
+      <source media="(max-width: 819px)" srcset="img/photo-1504384308090-c894fdcc538d-900x1600.jpg">
+      <img src="img/photo-1504384308090-c894fdcc538d-2000.jpg" alt="" decoding="async">
+    </picture>
+    <picture class="sx-scene" data-scene="volt">
+      <source media="(max-width: 819px)" srcset="img/photo-1641337221253-fdc7237f6b61-900x1600.jpg">
+      <img src="img/photo-1641337221253-fdc7237f6b61-2000.jpg" alt="" decoding="async">
+    </picture>
+    <picture class="sx-scene" data-scene="berry">
+      <source media="(max-width: 819px)" srcset="img/photo-1669279857939-1f7762f85c64-900x1600.jpg">
+      <img src="img/photo-1669279857939-1f7762f85c64-2000.jpg" alt="" decoding="async">
+    </picture>
+    <div class="sx-grade"></div>
+  </div>
+
   <main class="pg-main" id="main">
-    <section class="shop-hero" aria-labelledby="pName">
-      <div class="wrap shop-grid">
-        <div class="stage shop-stage" id="shopStage" data-tilt>
-          <div class="stage-inner" data-bottle="theme"></div>
-          <div class="spot" aria-hidden="true"></div>
-        </div>
+    <!-- HERO: the live bottle is the product shot -->
+    <section class="sx-hero" aria-labelledby="pName">
+      <div class="sx-word" aria-hidden="true"><span data-word>VOLT</span></div>
 
-        <div class="buy">
-          <div class="buy-head" data-reveal>
-            <span class="pg-kicker">Shop · 500 mL · 0 g sugar</span>
-            <h1 class="display" id="pName">Volt Lime</h1>
-            <p class="notes" id="pNotes">Lime · Yuzu</p>
-            <p class="lede" id="pDesc">Sharp lime with a flash of yuzu. The original, and still the loudest thing in the fridge.</p>
-          </div>
+      <div class="sx-stage" id="shopStage">
+        <div class="sx-halo" aria-hidden="true"></div>
+        <div class="sx-bottle" data-bottle3d="theme" data-interactive data-autorotate data-fit="0.8" data-backdrop="#2a2d27" role="img" aria-label="PRIMO bottle, drag to rotate"></div>
+        <div class="sx-floor" aria-hidden="true"></div>
+        <p class="sx-hint" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4 12h16M8 8l-4 4 4 4M16 8l4 4-4 4"/></svg>Drag to spin</p>
+      </div>
 
-          <fieldset data-reveal style="--d:.06s">
-            <legend class="field-label">Flavour</legend>
-            <div class="swatches">
-              <label class="swatch sw-volt"><input type="radio" name="flavour" value="volt"><span>Volt</span></label>
-              <label class="swatch sw-berry"><input type="radio" name="flavour" value="berry"><span>Berry</span></label>
-              <label class="swatch sw-glacier"><input type="radio" name="flavour" value="glacier"><span>Glacier</span></label>
-              <label class="swatch sw-ember"><input type="radio" name="flavour" value="ember"><span>Ember</span></label>
+      <div class="sx-copy">
+        <p class="pg-kicker" data-reveal><span data-time>18:00</span>&nbsp;·&nbsp;<span data-scene-name>The gym</span></p>
+        <h1 class="sx-name" id="pName" data-reveal style="--d:.06s"><span data-name>Volt Lime</span></h1>
+        <p class="sx-notes" data-reveal style="--d:.1s" data-notes>Lime · Yuzu</p>
+        <p class="sx-desc" data-reveal style="--d:.14s" data-desc>Sharp lime with a flash of yuzu. The original, and still the loudest thing in the fridge.</p>
+
+        <form class="sx-buy" id="buyForm" data-reveal style="--d:.18s" novalidate>
+          <fieldset class="sx-fl">
+            <legend class="sx-label">Flavour <span data-fl-label>Volt Lime</span></legend>
+            <div class="sx-fl-row">
+              <label class="sx-fl-opt" style="--sw:#c8ff2e"><input type="radio" name="flavour" value="volt"><span><img alt="" data-snap="volt"></span><em>Volt</em></label>
+              <label class="sx-fl-opt" style="--sw:#b3a3ff"><input type="radio" name="flavour" value="berry"><span><img alt="" data-snap="berry"></span><em>Berry</em></label>
+              <label class="sx-fl-opt" style="--sw:#8fe3dc"><input type="radio" name="flavour" value="glacier"><span><img alt="" data-snap="glacier"></span><em>Glacier</em></label>
+              <label class="sx-fl-opt" style="--sw:#ffae78"><input type="radio" name="flavour" value="ember"><span><img alt="" data-snap="ember"></span><em>Ember</em></label>
             </div>
           </fieldset>
 
-          <fieldset data-reveal style="--d:.12s">
-            <legend class="field-label">Pack size</legend>
-            <div class="packs">
-              <label class="pack-card" data-pack-card="1"><input type="radio" name="pack" value="1">
-                <span class="pack-body"><span class="pack-bottles" aria-hidden="true"><i></i></span><span class="pack-name">Single</span><span class="pack-price">$4.50</span><span class="pack-per">$4.50 / bottle</span><span class="pack-save">Try one</span></span></label>
-              <label class="pack-card" data-pack-card="6"><input type="radio" name="pack" value="6">
-                <span class="pack-body"><span class="pack-bottles" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i></span><span class="pack-name">6-pack</span><span class="pack-price">$24.00</span><span class="pack-per">$4.00 / bottle</span><span class="pack-save">Save 11%</span></span></label>
-              <label class="pack-card" data-pack-card="12"><input type="radio" name="pack" value="12">
-                <span class="pack-body"><span class="pack-bottles" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></span><span class="pack-name">12-pack</span><span class="pack-price">$45.00</span><span class="pack-per">$3.75 / bottle</span><span class="pack-save">Save 17%</span></span></label>
-              <label class="pack-card" data-pack-card="24"><input type="radio" name="pack" value="24">
-                <span class="pack-body"><span class="pack-bottles" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></span><span class="pack-name">24-pack</span><span class="pack-price">$84.00</span><span class="pack-per">$3.50 / bottle</span><span class="pack-save">Save 22%</span></span></label>
+          <fieldset class="sx-packs-pick">
+            <legend class="sx-label">Pack size</legend>
+            <div class="sx-pack-row">
+              <label class="sx-pack"><input type="radio" name="pack" value="1"><span><b>1</b><em>Single</em><i data-pp="1">$4.50</i></span></label>
+              <label class="sx-pack"><input type="radio" name="pack" value="6"><span><b>6</b><em>6-pack</em><i data-pp="6">$24.00</i><small>Save 11%</small></span></label>
+              <label class="sx-pack"><input type="radio" name="pack" value="12" checked><span><b>12</b><em>12-pack</em><i data-pp="12">$45.00</i><small>Save 17%</small></span></label>
+              <label class="sx-pack"><input type="radio" name="pack" value="24"><span><b>24</b><em>24-pack</em><i data-pp="24">$84.00</i><small>Save 22%</small></span></label>
             </div>
           </fieldset>
 
-          <div class="sub-row" data-reveal style="--d:.18s">
-            <div>
-              <strong id="subLabel">Subscribe &amp; save</strong>
-              <small id="subSave">Save 15% · delivered every 4 weeks · skip or cancel anytime</small>
-            </div>
-            <span class="switch"><input type="checkbox" id="subToggle" role="switch" aria-labelledby="subLabel" aria-describedby="subSave"><span></span></span>
-          </div>
+          <label class="sx-sub">
+            <input type="checkbox" name="sub" id="subToggle">
+            <span class="sx-switch" aria-hidden="true"></span>
+            <span class="sx-sub-text"><b>Subscribe &amp; save 15%</b><small>Delivered every 4 weeks. Skip or cancel any time.</small></span>
+          </label>
 
-          <div class="buy-row" data-reveal style="--d:.24s">
-            <div class="stepper" role="group" aria-label="Quantity">
-              <button type="button" id="qtyMinus" aria-label="Decrease quantity">−</button>
-              <output id="qtyVal" aria-live="polite">1</output>
-              <button type="button" id="qtyPlus" aria-label="Increase quantity">+</button>
+          <div class="sx-total-row">
+            <div class="sx-price" aria-live="polite">
+              <s data-was hidden>$45.00</s>
+              <strong data-price>$45.00</strong>
+              <small data-per>$3.75 / bottle</small>
             </div>
-            <button class="btn btn-primary add-btn" type="button" id="addBtn">Add to cart <span class="add-price" id="addPrice">$45.00</span></button>
+            <div class="sx-qty" role="group" aria-label="Quantity">
+              <button type="button" data-q="-1" aria-label="Decrease quantity">−</button>
+              <output id="qty" aria-live="polite">1</output>
+              <button type="button" data-q="1" aria-label="Increase quantity">+</button>
+            </div>
           </div>
-
-          <ul class="trust" data-reveal style="--d:.3s">
-            <li>Free shipping over $60</li>
-            <li>100% rPET bottle</li>
-            <li>30-day taste guarantee</li>
+          <button type="submit" class="btn btn-primary sx-add magnetic" id="addBtn">
+            <span>Add to cart</span><span class="sx-add-total" data-add-total>$45.00</span>
+          </button>
+          <ul class="sx-assure">
+            <li><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 7h11v9H3zM14 10h4l3 3v3h-7M7 19a2 2 0 100-4 2 2 0 000 4zM17 19a2 2 0 100-4 2 2 0 000 4z"/></svg>Free shipping over $60</li>
+            <li><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12a8 8 0 0114-5.3L20 9M20 4v5h-5M20 12a8 8 0 01-14 5.3L4 15M4 20v-5h5"/></svg>Cancel any time</li>
+            <li><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3c3 4 6 7 6 11a6 6 0 01-12 0c0-4 3-7 6-11z"/></svg>100% rPET bottle</li>
           </ul>
+        </form>
+      </div>
+
+      <div class="sx-rail" aria-hidden="true"><span data-idx>03</span><i></i><span>04</span></div>
+    </section>
+
+    <!-- PACKS: real bottles, arranged like a case -->
+    <section class="sec sx-cases" aria-labelledby="casesTitle">
+      <div class="wrap">
+        <div class="sec-head">
+          <p class="pg-kicker" data-reveal>Stock the fridge</p>
+          <h2 class="h2" id="casesTitle" data-reveal style="--d:.06s">The more you drink,<br><span class="accent">the less it costs.</span></h2>
+        </div>
+        <div class="sx-case-grid">
+          <article class="sx-case glass" data-reveal data-pack="6">
+            <div class="sx-case-fig" aria-hidden="true"><span class="sx-big">06</span><div class="sx-crate" data-crate="6"></div></div>
+            <div class="sx-case-body">
+              <h3 class="h3">6-pack</h3>
+              <p class="muted"><span data-case-price="6">$24.00</span> · <span data-case-per="6">$4.00</span> a bottle</p>
+              <button type="button" class="btn btn-ghost btn-sm" data-case-add="6">Add <span data-case-name>Volt</span> 6-pack</button>
+            </div>
+          </article>
+          <article class="sx-case glass featured" data-reveal style="--d:.08s" data-pack="12">
+            <p class="sx-badge">Most picked</p>
+            <div class="sx-case-fig" aria-hidden="true"><span class="sx-big">12</span><div class="sx-crate" data-crate="12"></div></div>
+            <div class="sx-case-body">
+              <h3 class="h3">12-pack</h3>
+              <p class="muted"><span data-case-price="12">$45.00</span> · <span data-case-per="12">$3.75</span> a bottle</p>
+              <button type="button" class="btn btn-primary btn-sm" data-case-add="12">Add <span data-case-name>Volt</span> 12-pack</button>
+            </div>
+          </article>
+          <article class="sx-case glass" data-reveal style="--d:.16s" data-pack="24">
+            <div class="sx-case-fig" aria-hidden="true"><span class="sx-big">24</span><div class="sx-crate" data-crate="24"></div></div>
+            <div class="sx-case-body">
+              <h3 class="h3">24-pack</h3>
+              <p class="muted"><span data-case-price="24">$84.00</span> · <span data-case-per="24">$3.50</span> a bottle</p>
+              <button type="button" class="btn btn-ghost btn-sm" data-case-add="24">Add <span data-case-name>Volt</span> 24-pack</button>
+            </div>
+          </article>
         </div>
       </div>
     </section>
 
-    <section class="cart-sec" id="cart" aria-labelledby="cartTitle">
+    <!-- A DAY ON PRIMO: flavour cards with their life scenes -->
+    <section class="sec sx-day" aria-labelledby="dayTitle">
       <div class="wrap">
-        <div class="cart-head">
-          <h2 class="h2" id="cartTitle">Your cart</h2>
-          <p class="muted" id="cartCountLabel" aria-live="polite">Empty</p>
+        <div class="sec-head">
+          <p class="pg-kicker" data-reveal>A day on PRIMO</p>
+          <h2 class="h2" id="dayTitle" data-reveal style="--d:.06s">Pick your hour.</h2>
         </div>
-
-        <div class="glass cart-empty" id="cartEmpty">
-          <div class="empty-bottle" data-bottle="theme"></div>
-          <p class="h3">Nothing in here yet.</p>
-          <p class="muted">Pick a flavour above and it'll land here.</p>
-          <a class="btn btn-ghost btn-sm" href="#main">Choose a flavour</a>
+        <div class="sx-day-grid">
+          <button type="button" class="sx-hour" data-pick="ember" data-reveal style="--sw:#ffae78">
+            <img class="sx-hour-photo" src="img/photo-1594882645126-14020914d58d-900x1600.jpg" alt="" loading="lazy">
+            <span class="sx-hour-time">06:30 · The run</span>
+            <img class="sx-hour-bottle" alt="" data-snap="ember">
+            <span class="sx-hour-name">Ember Citrus</span>
+            <span class="sx-hour-go">Choose <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>
+          </button>
+          <button type="button" class="sx-hour" data-pick="glacier" data-reveal style="--d:.06s;--sw:#8fe3dc">
+            <img class="sx-hour-photo" src="img/photo-1504384308090-c894fdcc538d-900x1600.jpg" alt="" loading="lazy">
+            <span class="sx-hour-time">09:00 · The office</span>
+            <img class="sx-hour-bottle" alt="" data-snap="glacier">
+            <span class="sx-hour-name">Glacier Mint</span>
+            <span class="sx-hour-go">Choose <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>
+          </button>
+          <button type="button" class="sx-hour" data-pick="volt" data-reveal style="--d:.12s;--sw:#c8ff2e">
+            <img class="sx-hour-photo" src="img/photo-1641337221253-fdc7237f6b61-900x1600.jpg" alt="" loading="lazy">
+            <span class="sx-hour-time">18:00 · The gym</span>
+            <img class="sx-hour-bottle" alt="" data-snap="volt">
+            <span class="sx-hour-name">Volt Lime</span>
+            <span class="sx-hour-go">Choose <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>
+          </button>
+          <button type="button" class="sx-hour" data-pick="berry" data-reveal style="--d:.18s;--sw:#b3a3ff">
+            <img class="sx-hour-photo" src="img/photo-1669279857939-1f7762f85c64-900x1600.jpg" alt="" loading="lazy">
+            <span class="sx-hour-time">22:00 · The desk</span>
+            <img class="sx-hour-bottle" alt="" data-snap="berry">
+            <span class="sx-hour-name">Midnight Berry</span>
+            <span class="sx-hour-go">Choose <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>
+          </button>
         </div>
+      </div>
+    </section>
 
-        <div class="cart-grid" id="cartFilled" hidden>
-          <ul class="glass cart-lines" id="cartList" aria-label="Items in your cart"></ul>
+    <!-- PROOF: the same outlined figures as the home page -->
+    <section class="sec sx-proof" aria-label="What's inside">
+      <div class="wrap sx-proof-grid">
+        <div data-reveal><p class="sx-fig">10<span>%</span></p><p class="h3">Coconut water</p><p class="muted">For natural potassium and a clean, round finish.</p></div>
+        <div data-reveal style="--d:.08s"><p class="sx-fig">830<span>mg</span></p><p class="h3">Electrolytes</p><p class="muted">Sodium, potassium and magnesium: what you sweat, put back.</p></div>
+        <div data-reveal style="--d:.16s"><p class="sx-fig">0<span>g</span></p><p class="h3">Added sugar</p><p class="muted">25 calories a bottle. Sweetened with monk fruit.</p></div>
+      </div>
+    </section>
 
-          <aside class="glass summary" aria-labelledby="sumTitle">
-            <h3 class="h3" id="sumTitle">Order summary</h3>
-            <div class="ship">
-              <p class="ship-msg" id="shipMsg" aria-live="polite">$60.00 to free shipping</p>
-              <div class="ship-track" id="shipBar" role="progressbar" aria-label="Progress to free shipping" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><div class="ship-fill" id="shipFill"></div></div>
-            </div>
-            <form class="promo" id="promoForm" novalidate>
-              <label class="sr-only" for="promoInput">Promo code</label>
-              <input class="input" id="promoInput" name="promo" placeholder="Promo code · try PRIMO10" autocomplete="off" aria-describedby="promoMsg">
-              <button class="btn btn-ghost" type="submit">Apply</button>
-            </form>
-            <p class="promo-msg" id="promoMsg" aria-live="polite"></p>
-            <dl class="sum-rows">
-              <div><dt>Subtotal</dt><dd id="sumSubtotal">$0.00</dd></div>
-              <div id="sumDiscountRow" hidden><dt id="sumDiscountLabel">Promo</dt><dd id="sumDiscount" class="accent">−$0.00</dd></div>
-              <div><dt>Shipping</dt><dd id="sumShipping">—</dd></div>
-              <div class="sum-total"><dt>Total</dt><dd id="sumTotal">$0.00</dd></div>
-            </dl>
-            <p class="muted" style="font-size:13px;margin-top:-8px" id="sumGst">Includes $0.00 GST</p>
-            <button class="btn btn-primary checkout-btn" type="button" id="checkoutBtn" disabled>Checkout</button>
-            <p class="demo-note">Demo store. Checkout charges nothing and sends nothing.</p>
-          </aside>
+    <!-- FAQ -->
+    <section class="sec sx-faq" aria-labelledby="faqTitle">
+      <div class="wrap sx-faq-grid">
+        <div class="sec-head">
+          <p class="pg-kicker" data-reveal>Before you ask</p>
+          <h2 class="h2" id="faqTitle" data-reveal style="--d:.06s">Good questions.</h2>
+        </div>
+        <div class="sx-faq-list" data-reveal style="--d:.1s">
+          <details><summary>How does subscribe &amp; save work?</summary><p>Every 4 weeks we would send the same box at 15% off. Skip, swap flavours or cancel from your account. In this demo, nothing is ever sent.</p></details>
+          <details><summary>When does shipping become free?</summary><p>Orders of $60 or more after discounts ship free. Below that, standard shipping is $9.95, and the cart shows how close you are.</p></details>
+          <details><summary>Can I mix flavours in a pack?</summary><p>Not yet: each pack is one flavour. Add a different pack per flavour; the cart keeps them separate.</p></details>
+          <details><summary>Is the bottle recyclable?</summary><p>The bottle is made from recycled PET and the cap is HDPE, both kerbside recyclable in Australia. Cap on.</p></details>
+          <details><summary>Can I actually buy PRIMO?</summary><p>No. PRIMO is a fictional brand made for a design demo. The checkout charges nothing and sends nothing.</p></details>
         </div>
       </div>
     </section>
   </main>
 
-  <div class="cart-bar" id="cartBar" hidden>
-    <span><strong id="cartBarTotal">$0.00</strong> <span class="muted">· <span id="cartBarCount">0</span> in cart</span></span>
-    <a class="btn btn-primary btn-sm" href="#cart">View cart</a>
+  <!-- Mobile buy bar -->
+  <div class="sx-bar" id="buyBar">
+    <img alt="" data-snap="volt" data-bar-snap>
+    <div><b data-bar-name>Volt Lime</b><small data-bar-meta>12-pack · $45.00</small></div>
+    <button type="button" class="btn btn-primary btn-sm" data-bar-add>Add</button>
   </div>
-
-  <dialog class="dlg" id="checkoutDialog" aria-labelledby="dlgTitle">
-    <div class="dlg-inner">
-      <div class="dlg-badge" aria-hidden="true"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></div>
-      <h2 class="h3" id="dlgTitle">Order preview <span class="muted" style="font-weight:500">· <span id="dlgRef">DEMO</span></span></h2>
-      <p class="demo-banner"><strong>This is a demo.</strong> Nothing was charged, no payment details were collected, and no order was placed or sent anywhere. PRIMO is a fictional brand.</p>
-      <ul class="dlg-items" id="dlgItems"></ul>
-      <div class="dlg-total"><span>Total</span><span id="dlgTotal">$0.00</span></div>
-      <div class="btn-row">
-        <button class="btn btn-primary" type="button" id="dlgClear">Finish demo &amp; clear cart</button>
-        <button class="btn btn-ghost" type="button" data-close-dialog>Keep shopping</button>
-      </div>
-    </div>
-  </dialog>
 
   <footer class="footer">
     <div class="logo">PRIMO<span class="dot"></span></div>
     <p>PRIMO is a fictional brand made for a design and interaction demo. Not a real product. Prices are illustrative and nothing can be bought.</p>
-    <nav class="pg-foot-links" aria-label="Footer"><a href="index.html">Home</a><a href="about.html">About</a><a href="feedback.html">Feedback</a></nav>
+    <nav class="pg-foot-links" aria-label="Footer"><a href="index.html">Home</a><a href="about.html">About</a><a href="feedback.html">Feedback</a><a href="shop.html#cart" data-open-cart>Cart</a></nav>
+    <p class="credits muted">Photos via Unsplash: <a href="https://unsplash.com/@ventiviews">@ventiviews</a>, <a href="https://unsplash.com/@frantic">@frantic</a>, <a href="https://unsplash.com/@lukewitter">Luke Witter</a>, <a href="https://unsplash.com/@nrjwolf">@nrjwolf</a>.</p>
     <p class="muted">© 2026 Demo build</p>
   </footer>
 </body>

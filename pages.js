@@ -177,14 +177,66 @@
   }, { threshold: 0.5 }) : null;
   document.querySelectorAll('[data-count-to]').forEach(function (el) { if (countIO) countIO.observe(el); else el.textContent = el.getAttribute('data-count-to'); });
 
-  /* themed bottle slots */
-  document.querySelectorAll('[data-bottle]').forEach(function (el) {
-    var id = el.getAttribute('data-bottle');
-    el.innerHTML = bottleSVG(FLAVOURS[id] ? id : null);
+  /* ---------- real 3D bottle from bottle3d.js (same bottle as the home page), SVG fallback ---------- */
+  var b3dPromise = null;
+  function loadB3d() {
+    if (!b3dPromise) { b3dPromise = import('./bottle3d.js'); b3dPromise.catch(function () {}); }
+    return b3dPromise;
+  }
+  var mounts = [];
+  function svgFallback(rec) { rec.el.classList.add('is-svg'); rec.el.innerHTML = bottleSVG(rec.id); }
+  document.querySelectorAll('[data-bottle], [data-bottle3d]').forEach(function (el) {
+    var attr = el.getAttribute('data-bottle3d') || el.getAttribute('data-bottle') || 'theme';
+    var theme = !FLAVOURS[attr];
+    var rec = { el: el, theme: theme, id: theme ? current : attr, handle: null, pending: null };
+    mounts.push(rec);
+    loadB3d().then(function (m) {
+      if (!m || !m.mountBottle) throw new Error('mountBottle missing');
+      rec.handle = m.mountBottle(el, {
+        flavour: rec.pending || rec.id,
+        interactive: el.hasAttribute('data-interactive'),
+        autoRotate: el.hasAttribute('data-autorotate') && !reduced,
+        tilt: +(el.getAttribute('data-tilt3d') || 0),
+        turn: +(el.getAttribute('data-turn3d') || 0),
+        fit: +(el.getAttribute('data-fit') || 0.9),
+        backdrop: el.getAttribute('data-backdrop') || undefined
+      });
+      if (!rec.handle) throw new Error('WebGL unavailable');
+      rec.pending = null;
+      el.classList.add('is-3d');
+    }).catch(function (err) {
+      if (window.console) console.warn('[primo] 3D bottle unavailable, using the SVG fallback.', err);
+      svgFallback(rec);
+    });
   });
-  function refreshThemedBottles() {
-    document.querySelectorAll('[data-bottle=""],[data-bottle="theme"]').forEach(function (el) {
-      el.innerHTML = bottleSVG(null);
+  function refreshThemedBottles(id, skip) {
+    id = FLAVOURS[id] ? id : current;
+    mounts.forEach(function (r) {
+      if (!r.theme || r === skip) return;
+      r.id = id;
+      if (r.handle) r.handle.setFlavour(id);
+      else if (r.el.classList.contains('is-svg')) r.el.innerHTML = bottleSVG(id);
+      else r.pending = id;
+    });
+  }
+  window.primoPages.bottles = mounts;
+
+  /* snapshot images ([data-snap]) and smooth scrolling, matching the home page */
+  if (window.primoCart) window.primoCart.fillSnaps(document);
+  if (window.Lenis && !reduced) {
+    try {
+      var lenis = new Lenis({ lerp: 0.1, smoothWheel: true });
+      window.primoLenis = lenis;
+      (function raf(t) { lenis.raf(t); requestAnimationFrame(raf); })(performance.now());
+    } catch (e) {}
+  }
+  if (!reduced && matchMedia('(pointer: fine)').matches) {
+    document.querySelectorAll('.magnetic').forEach(function (b) {
+      b.addEventListener('pointermove', function (e) {
+        var r = b.getBoundingClientRect();
+        b.style.transform = 'translate(' + ((e.clientX - r.left - r.width / 2) * 0.16).toFixed(1) + 'px,' + ((e.clientY - r.top - r.height / 2) * 0.24).toFixed(1) + 'px)';
+      });
+      b.addEventListener('pointerleave', function () { b.style.transform = ''; });
     });
   }
 
@@ -215,171 +267,180 @@
 
   /* ======================= SHOP ======================= */
   if (page === 'shop' && cart) {
+    var SCENES = { ember: ['06:30', 'The run'], glacier: ['09:00', 'The office'], volt: ['18:00', 'The gym'], berry: ['22:00', 'The desk'] };
+    var ORDER = ['ember', 'glacier', 'volt', 'berry'];
     var state = { id: current, pack: 12, sub: false, qty: 1 };
-    var FREE_SHIP = 60, SHIP = 9.95;
-    var promo = null; // {code, pct}
+    try {
+      var qs = new URLSearchParams(location.search);
+      if (FLAVOURS[qs.get('flavour')]) state.id = qs.get('flavour');
+      if (cart.PACKS[qs.get('pack')]) state.pack = +qs.get('pack');
+    } catch (e) {}
+    var heroRec = mounts.filter(function (r) { return r.el.closest('#shopStage'); })[0];
+    var addBtn = $('#addBtn');
+
+    function swapText(el, txt) {
+      if (!el || el.textContent === txt) return;
+      el.textContent = txt;
+      if (reduced) return;
+      el.classList.remove('swap-in'); void el.offsetWidth; el.classList.add('swap-in');
+    }
+    function tween(from, to, ms, fn, done) {
+      if (reduced) { fn(to); if (done) done(); return; }
+      var t0 = performance.now();
+      (function step(t) {
+        var k = Math.min(1, (t - t0) / ms), e = k < 0.5 ? 4 * k * k * k : 1 - Math.pow(-2 * k + 2, 3) / 2;
+        fn(from + (to - from) * e);
+        if (k < 1) requestAnimationFrame(step); else if (done) done();
+      })(t0);
+    }
+    var pourToken = 0;
+    function pour(id) {
+      if (!heroRec) return;
+      heroRec.id = id;
+      var h = heroRec.handle;
+      if (!h) { heroRec.pending = id; return; }
+      var tok = ++pourToken;
+      if (reduced || !h.setFill) { h.setFlavour(id); return; }
+      tween(1, 0.12, 520, function (v) { if (tok === pourToken) h.setFill(v); }, function () {
+        if (tok !== pourToken) return;
+        h.setFlavour(id);
+        tween(0.12, 1, 1100, function (v) { if (tok === pourToken) h.setFill(v); });
+      });
+    }
+    function setSnap(img, id) {
+      img.setAttribute('data-snap', id);
+      img.setAttribute('data-snapped', '');
+      cart.snapshot(id).then(function (url) { if (img.getAttribute('data-snap') === id) { img.src = url; img.classList.add('ready'); } });
+    }
+
+    /* pack cases: real bottle renders arranged like a case, back rows smaller and darker */
+    var CRATE = { 6: [3, 2, 74, 24], 12: [4, 3, 62, 18], 24: [6, 4, 50, 12.5] };
+    function buildCrates() {
+      $$('[data-crate]').forEach(function (box) {
+        var n = +box.getAttribute('data-crate'), c = CRATE[n];
+        if (!box.children.length) {
+          var cols = c[0], rows = c[1];
+          for (var r = 0; r < rows; r++) {
+            for (var k = 0; k < cols; k++) {
+              var d = rows > 1 ? (rows - 1 - r) / (rows - 1) : 0, s = 1 - 0.3 * d;
+              var img = new Image();
+              img.alt = '';
+              img.style.cssText = 'left:' + (50 + (k - (cols - 1) / 2) * c[3] * s + d * 3).toFixed(2) + '%;bottom:' + (6 + d * 30).toFixed(2) +
+                '%;height:' + (c[2] * s).toFixed(2) + '%;z-index:' + (r + 1) + ';--b:' + (1 - 0.5 * d).toFixed(2) + ';--i:' + (r * cols + k);
+              box.appendChild(img);
+            }
+          }
+        }
+        $$('img', box).forEach(function (img) { setSnap(img, state.id); });
+      });
+    }
+
+    function price() {
+      var unit = cart.packPrice(state.pack, state.sub), list = cart.PACKS[state.pack].price;
+      $('[data-price]').textContent = cart.format(unit);
+      var was = $('[data-was]'); was.hidden = !state.sub; was.textContent = cart.format(list);
+      $('[data-per]').textContent = cart.format(cart.perBottle(state.pack, state.sub)) + ' / bottle';
+      $('[data-add-total]').textContent = cart.format(unit * state.qty);
+      $('#qty').textContent = state.qty;
+      $$('[data-pp]').forEach(function (el) { el.textContent = cart.format(cart.packPrice(+el.getAttribute('data-pp'), state.sub)); });
+      $$('[data-case-price]').forEach(function (el) { el.textContent = cart.format(cart.packPrice(+el.getAttribute('data-case-price'), state.sub)); });
+      $$('[data-case-per]').forEach(function (el) { el.textContent = cart.format(cart.perBottle(+el.getAttribute('data-case-per'), state.sub)); });
+      $('[data-bar-meta]').textContent = cart.PACKS[state.pack].label + ' · ' + cart.format(unit * state.qty);
+      $$('input[name="pack"]').forEach(function (r) { r.checked = +r.value === state.pack; });
+      $('#subToggle').checked = state.sub;
+    }
 
     function setFlavour(id, external) {
       if (!FLAVOURS[id]) return;
+      var first = !setFlavour.done;
+      setFlavour.done = true;
+      var changed = id !== state.id;
       state.id = id;
-      applyTheme(id, external ? {} : { persist: true, broadcast: true });
-      var f = FLAVOURS[id];
-      var stage = $('#shopStage');
-      if (stage) {
-        stage.classList.remove('swap'); void stage.offsetWidth; stage.classList.add('swap');
-      }
-      setTimeout(refreshThemedBottles, reduced ? 0 : 180);
-      $('#pName').textContent = f.name;
-      $('#pDesc').textContent = f.desc;
-      $('#pNotes').textContent = f.notes;
+      applyTheme(id, external || first ? {} : { persist: true, broadcast: true });
+      var f = FLAVOURS[id], sc = SCENES[id];
+      swapText($('[data-name]'), f.name);
+      swapText($('[data-word]'), f.short.toUpperCase());
+      $('[data-notes]').textContent = f.notes;
+      $('[data-desc]').textContent = f.desc;
+      $('[data-fl-label]').textContent = f.name;
+      $('[data-time]').textContent = sc[0];
+      $('[data-scene-name]').textContent = sc[1];
+      $('[data-idx]').textContent = '0' + (ORDER.indexOf(id) + 1);
+      $('[data-bar-name]').textContent = f.name;
+      $$('[data-case-name]').forEach(function (e) { e.textContent = f.short; });
       $$('input[name="flavour"]').forEach(function (r) { r.checked = r.value === id; });
-      renderBuy();
+      $$('.sx-scene').forEach(function (s) { s.classList.toggle('on', s.getAttribute('data-scene') === id); });
+      $$('.sx-hour').forEach(function (b) { b.setAttribute('aria-pressed', b.getAttribute('data-pick') === id ? 'true' : 'false'); });
+      if (first || !changed) { if (heroRec) { heroRec.id = id; if (heroRec.handle) heroRec.handle.setFlavour(id); else heroRec.pending = id; } }
+      else pour(id);
+      refreshThemedBottles(id, heroRec);
+      setSnap($('[data-bar-snap]'), id);
+      buildCrates();
+      price();
     }
 
-    function renderBuy() {
-      $$('.pack-card').forEach(function (card) {
-        var pk = +card.getAttribute('data-pack-card');
-        var price = cart.packPrice(pk, state.sub);
-        var per = price / pk;
-        $('.pack-price', card).textContent = cart.format(price);
-        $('.pack-per', card).textContent = cart.format(per) + ' / bottle';
-        var base = cart.PACKS[1].price, save = Math.round((1 - per / base) * 100);
-        var badge = $('.pack-save', card);
-        badge.textContent = save > 0 ? 'Save ' + save + '%' : 'Try one';
-      });
-      var total = cart.packPrice(state.pack, state.sub) * state.qty;
-      $('#qtyVal').textContent = state.qty;
-      $('#qtyMinus').disabled = state.qty <= 1;
-      $('#addPrice').textContent = cart.format(total);
-      $('#addBtn').setAttribute('aria-label', 'Add ' + state.qty + ' × ' + FLAVOURS[state.id].name + ' ' + cart.PACKS[state.pack].label + ' to cart, ' + cart.format(total));
-      $('#subSave').textContent = state.sub ? 'You save ' + cart.format(cart.packPrice(state.pack, false) * state.qty - total) + ' on this order' : 'Save 15% · delivered every 4 weeks · skip or cancel anytime';
-    }
-
-    $$('input[name="flavour"]').forEach(function (r) {
-      r.checked = r.value === state.id;
-      r.addEventListener('change', function () { if (r.checked) setFlavour(r.value); });
-    });
-    $$('input[name="pack"]').forEach(function (r) {
-      r.checked = +r.value === state.pack;
-      r.addEventListener('change', function () { if (r.checked) { state.pack = +r.value; renderBuy(); } });
-    });
-    $('#subToggle').addEventListener('change', function (e) { state.sub = e.target.checked; renderBuy(); });
-    $('#qtyMinus').addEventListener('click', function () { state.qty = Math.max(1, state.qty - 1); renderBuy(); });
-    $('#qtyPlus').addEventListener('click', function () { state.qty = Math.min(20, state.qty + 1); renderBuy(); });
-    $('#addBtn').addEventListener('click', function () {
-      cart.add(state.id, state.pack, state.qty, { sub: state.sub });
-      cart.toast('Added ' + FLAVOURS[state.id].short + ' · ' + cart.PACKS[state.pack].label + (state.qty > 1 ? ' × ' + state.qty : ''));
-      var b = $('#addBtn'); b.classList.remove('added'); void b.offsetWidth; b.classList.add('added');
-      flyToCart();
-    });
-
-    function flyToCart() {
-      if (reduced) return;
-      var from = $('#shopStage svg'), to = $('.nav-cart');
-      if (!from || !to) return;
-      var a = from.getBoundingClientRect(), b = to.getBoundingClientRect();
-      var ghost = document.createElement('div');
-      ghost.className = 'fly-ghost';
-      ghost.innerHTML = bottleSVG(state.id);
-      ghost.style.cssText = 'left:' + a.left + 'px;top:' + a.top + 'px;width:' + a.width + 'px;height:' + a.height + 'px';
-      document.body.appendChild(ghost);
-      var dx = b.left + b.width / 2 - (a.left + a.width / 2), dy = b.top + b.height / 2 - (a.top + a.height / 2);
-      var anim = ghost.animate([
-        { transform: 'translate(0,0) scale(1)', opacity: 0.9 },
-        { transform: 'translate(' + dx * 0.55 + 'px,' + (dy * 0.4 - 80) + 'px) scale(.45) rotate(-12deg)', opacity: 0.85, offset: 0.55 },
-        { transform: 'translate(' + dx + 'px,' + dy + 'px) scale(.06) rotate(-30deg)', opacity: 0 }
-      ], { duration: 900, easing: 'cubic-bezier(.5,0,.2,1)' });
-      anim.onfinish = function () { ghost.remove(); };
-    }
-
-    /* cart list + summary */
-    function renderCart() {
-      var items = cart.items();
-      var list = $('#cartList');
-      var empty = items.length === 0;
-      $('#cartEmpty').hidden = !empty;
-      $('#cartFilled').hidden = empty;
-      $('#cartCountLabel').textContent = empty ? 'Empty' : cart.count() + (cart.count() === 1 ? ' item' : ' items') + ' · ' + cart.bottles() + ' bottles';
-      list.innerHTML = items.map(function (l) {
-        var f = FLAVOURS[l.id];
-        return '<li class="line" data-key="' + esc(l.key) + '">' +
-          '<div class="line-thumb" style="--g:' + f.glow + '">' + bottleSVG(l.id, { cls: 'mini' }) + '</div>' +
-          '<div class="line-info"><p class="line-name">' + esc(f.name) + '</p>' +
-          '<p class="line-meta">' + esc(cart.PACKS[l.pack].label) + ' · ' + cart.format(cart.unitPrice(l)) + (l.sub ? ' <span class="sub-badge">Subscribe · −15%</span>' : '') + '</p>' +
-          '<button class="line-remove" type="button" data-remove>Remove<span class="sr-only"> ' + esc(cart.label(l)) + '</span></button></div>' +
-          '<div class="stepper sm" role="group" aria-label="Quantity for ' + esc(cart.label(l)) + '">' +
-            '<button type="button" data-dec aria-label="Decrease quantity">−</button><output aria-live="polite">' + l.qty + '</output><button type="button" data-inc aria-label="Increase quantity">+</button></div>' +
-          '<p class="line-total">' + cart.format(cart.lineTotal(l)) + '</p></li>';
-      }).join('');
-
-      var sub = cart.subtotal();
-      var disc = promo ? Math.round(sub * promo.pct) / 100 : 0;
-      var after = sub - disc;
-      var ship = empty ? 0 : (after >= FREE_SHIP ? 0 : SHIP);
-      var total = after + ship;
-      $('#sumSubtotal').textContent = cart.format(sub);
-      $('#sumDiscountRow').hidden = !promo;
-      if (promo) { $('#sumDiscount').textContent = '−' + cart.format(disc); $('#sumDiscountLabel').textContent = 'Promo ' + promo.code; }
-      $('#sumShipping').textContent = empty ? '—' : (ship ? cart.format(ship) : 'Free');
-      $('#sumTotal').textContent = cart.format(total);
-      $('#sumGst').textContent = 'Includes ' + cart.format(total / 11) + ' GST';
-      var pct = Math.min(1, after / FREE_SHIP);
-      $('#shipFill').style.transform = 'scaleX(' + pct.toFixed(3) + ')';
-      $('#shipMsg').textContent = after >= FREE_SHIP ? 'Free shipping unlocked.' : cart.format(FREE_SHIP - after) + ' to free shipping';
-      $('#shipBar').setAttribute('aria-valuenow', Math.round(pct * 100));
-      $('#checkoutBtn').disabled = empty;
-      var bar = $('#cartBar');
-      if (bar) { bar.hidden = empty; $('#cartBarTotal').textContent = cart.format(total); $('#cartBarCount').textContent = cart.count(); }
-    }
-    $('#cartList').addEventListener('click', function (e) {
-      var li = e.target.closest('.line'); if (!li) return;
-      var key = li.getAttribute('data-key');
-      var line = cart.items().filter(function (l) { return l.key === key; })[0];
+    function addCurrent(from, pack) {
+      pack = pack || state.pack;
+      var qty = pack === state.pack ? state.qty : 1;
+      var line = cart.add(state.id, pack, qty, { sub: state.sub });
       if (!line) return;
-      if (e.target.closest('[data-inc]')) cart.setQty(key, line.qty + 1);
-      else if (e.target.closest('[data-dec]')) cart.setQty(key, line.qty - 1);
-      else if (e.target.closest('[data-remove]')) {
-        li.classList.add('leaving');
-        setTimeout(function () { cart.remove(key); }, reduced ? 0 : 260);
-        return;
-      }
-      var focusSel = e.target.closest('[data-inc]') ? '[data-inc]' : e.target.closest('[data-dec]') ? '[data-dec]' : null;
-      if (focusSel) { var again = $('.line[data-key="' + key + '"] ' + focusSel); if (again) again.focus(); }
-    });
-
-    $('#promoForm').addEventListener('submit', function (e) {
-      e.preventDefault();
-      var code = $('#promoInput').value.trim().toUpperCase();
-      var msg = $('#promoMsg');
-      if (!code) { msg.textContent = 'Enter a code.'; msg.className = 'promo-msg err'; return; }
-      if (code === 'PRIMO10') { promo = { code: code, pct: 10 }; msg.textContent = 'PRIMO10 applied: 10% off (demo code).'; msg.className = 'promo-msg ok'; }
-      else { promo = null; msg.textContent = '“' + code + '” isn’t a valid code. Try PRIMO10.'; msg.className = 'promo-msg err'; }
-      renderCart();
-    });
-
-    var dlg = $('#checkoutDialog');
-    $('#checkoutBtn').addEventListener('click', function () {
-      var items = cart.items(); if (!items.length) return;
-      $('#dlgItems').innerHTML = items.map(function (l) {
-        return '<li><span>' + l.qty + ' × ' + esc(cart.label(l)) + (l.sub ? ' (subscribe)' : '') + '</span><span>' + cart.format(cart.lineTotal(l)) + '</span></li>';
-      }).join('');
-      $('#dlgTotal').textContent = $('#sumTotal').textContent;
-      $('#dlgRef').textContent = 'DEMO-' + Math.random().toString(36).slice(2, 8).toUpperCase();
-      if (dlg.showModal) { dlg.showModal(); document.body.classList.add('dialog-open'); } else dlg.setAttribute('open', '');
-    });
-    $$('[data-close-dialog]').forEach(function (b) { b.addEventListener('click', function () { dlg.close ? dlg.close() : dlg.removeAttribute('open'); }); });
-    dlg.addEventListener('close', function () { document.body.classList.remove('dialog-open'); });
-    $('#dlgClear').addEventListener('click', function () { cart.clear(); promo = null; $('#promoMsg').textContent = ''; dlg.close ? dlg.close() : dlg.removeAttribute('open'); });
-    dlg.addEventListener('click', function (e) { if (e.target === dlg && dlg.close) dlg.close(); });
-
-    var cartSec = $('#cart'), barEl = $('#cartBar');
-    if (barEl && 'IntersectionObserver' in window) {
-      new IntersectionObserver(function (es) { barEl.classList.toggle('away', es[0].isIntersecting); }, { threshold: 0.15 }).observe(cartSec);
+      cart.fly(from, state.id);
+      cart.toast('Added ' + FLAVOURS[state.id].short + ' · ' + cart.PACKS[pack].label + (qty > 1 ? ' × ' + qty : '') + (state.sub ? ' · subscribed' : ''));
+      from.classList.remove('added'); void from.offsetWidth; from.classList.add('added');
     }
-    cart.on(renderCart);
-    externalFlavour = function (id) { setFlavour(id, true); };
+
+    $('#buyForm').addEventListener('change', function (e) {
+      var t = e.target;
+      if (t.name === 'flavour') setFlavour(t.value);
+      else if (t.name === 'pack') { state.pack = +t.value; state.qty = 1; price(); }
+      else if (t.name === 'sub') { state.sub = t.checked; price(); }
+    });
+    $('#buyForm').addEventListener('submit', function (e) { e.preventDefault(); addCurrent(addBtn); });
+    $$('[data-q]').forEach(function (b) {
+      b.addEventListener('click', function () {
+        state.qty = Math.max(1, Math.min(20, state.qty + +b.getAttribute('data-q')));
+        price();
+        var o = $('#qty'); o.classList.remove('tick'); void o.offsetWidth; o.classList.add('tick');
+      });
+    });
+    $$('[data-case-add]').forEach(function (b) {
+      b.addEventListener('click', function () { addCurrent(b, +b.getAttribute('data-case-add')); });
+    });
+    $$('[data-pick]').forEach(function (b) {
+      b.addEventListener('click', function () {
+        setFlavour(b.getAttribute('data-pick'));
+        var lenis = window.primoLenis;
+        if (lenis) lenis.scrollTo(0, { duration: 1.4 }); else scrollTo({ top: 0, behavior: reduced ? 'auto' : 'smooth' });
+      });
+    });
+    var barAdd = $('[data-bar-add]');
+    if (barAdd) barAdd.addEventListener('click', function () { addCurrent(barAdd); });
+
+    /* mobile buy bar: shows once the main add button scrolls away */
+    var bar = $('#buyBar');
+    if (bar && 'IntersectionObserver' in window) {
+      var addVisible = true, footVisible = false;
+      var sync = function () { bar.classList.toggle('show', !addVisible && !footVisible); };
+      new IntersectionObserver(function (es) { addVisible = es[0].isIntersecting; sync(); }).observe(addBtn);
+      new IntersectionObserver(function (es) { footVisible = es[0].isIntersecting; sync(); }).observe($('.footer'));
+    }
+
+    /* drag hint fades after the first interaction */
+    var stage = $('#shopStage');
+    if (stage) stage.addEventListener('pointerdown', function () { stage.classList.add('touched'); }, { once: true });
+
+    /* giant word drifts with scroll */
+    var word = $('.sx-word');
+    var onShopScroll = function () {
+      var y = scrollY;
+      document.body.style.setProperty('--sx-dim', Math.min(0.78, Math.max(0, (y / innerHeight - 0.35) * 0.9)).toFixed(3));
+      if (word && !reduced) word.style.transform = 'translate3d(0,' + (y * 0.25).toFixed(1) + 'px,0)';
+    };
+    addEventListener('scroll', function () { requestAnimationFrame(onShopScroll); }, { passive: true });
+    onShopScroll();
+
+    externalFlavour = function (id) { if (id !== state.id) setFlavour(id, true); };
     setFlavour(state.id, true);
-    renderCart();
   }
 
   /* ======================= FEEDBACK ======================= */
