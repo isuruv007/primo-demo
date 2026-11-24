@@ -1,2 +1,8 @@
 .DS_Store
 _test/
+.env
+.env.*
+!.env.example
+node_modules/
+graphify-out/
+.claude/
