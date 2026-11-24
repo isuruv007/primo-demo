@@ -1,5 +1,4 @@
 import * as THREE from 'three';
-import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 
 /* =========================================================
    Config
@@ -59,7 +58,7 @@ document.querySelectorAll('a[href^="#"]').forEach((a) => {
 /* =========================================================
    Bottle geometry (units: bottle is ~4.2 tall, ~1.5 wide)
    ========================================================= */
-const BOTTLE = { bottom: -1.80, top: 2.42, radius: 0.72, base: 0.765, labelBottom: -1.30, labelTop: 0.90, fill: 1.46, neck: 0.42, capR: 0.49 };
+const BOTTLE = { bottom: -1.80, top: 2.30, radius: 0.72, base: 0.765, labelBottom: -1.30, labelTop: 0.90, fill: 1.46, neck: 0.42, capR: 0.462 };
 BOTTLE.length = BOTTLE.top - BOTTLE.bottom;
 BOTTLE.width = BOTTLE.base * 2;
 
@@ -73,45 +72,115 @@ function bezier(P0, P1, P2, P3, n, out) {
   }
 }
 
+// Neck finish (PCO-style): support ring, tamper band seat, threads, lip.
+const NECK = { ring: 1.835, threadsFrom: 1.995, threadsTo: 2.245, lip: 2.275, finishR: 0.402 };
+
 function bottleProfile() {
   const R = BOTTLE.radius, B = BOTTLE.base, pts = [];
-  // slightly domed (push-up) base
-  pts.push([0, -1.735], [0.22, -1.75], [0.42, -1.785]);
+  // pushed-up base (visible through the clear plastic)
+  pts.push([0, -1.60], [0.12, -1.612], [0.24, -1.65], [0.36, -1.72], [0.46, -1.778]);
   // rounded, flared foot
-  const rc = 0.13, cx = B - rc, cy = BOTTLE.bottom + rc;
-  for (let i = 0; i <= 12; i++) {
-    const a = -Math.PI / 2 + (i / 12) * (Math.PI / 2);
+  const rc = 0.12, cx = B - rc, cy = BOTTLE.bottom + rc;
+  for (let i = 0; i <= 14; i++) {
+    const a = -Math.PI / 2 + (i / 14) * (Math.PI / 2);
     pts.push([cx + rc * Math.cos(a), cy + rc * Math.sin(a)]);
   }
-  // foot eases back into the body
-  bezier([B, cy], [B, -1.48], [R, -1.46], [R, -1.34], 8, pts);
+  // foot eases back into the body, with a crisp moulded step under the label
+  bezier([B, cy], [B, -1.50], [R + 0.012, -1.47], [R + 0.012, -1.405], 10, pts);
+  pts.push([R + 0.012, -1.385], [R, -1.372], [R, -1.34]);
   // straight label panel
   pts.push([R, -0.4], [R, 0.5], [R, 0.90]);
-  // twin decorative rings above the label
-  pts.push([R, 0.93], [R + 0.008, 0.955], [R, 0.98], [R, 1.01], [R + 0.008, 1.035], [R, 1.06]);
-  // long, gentle shoulder up to a wide neck
-  bezier([R, 1.06], [R, 1.40], [BOTTLE.neck + 0.05, 1.56], [BOTTLE.neck, 1.80], 22, pts);
-  // neck finish + tamper ring
-  pts.push([BOTTLE.neck, 1.84], [0.47, 1.855], [0.47, 1.895], [BOTTLE.neck, 1.905], [BOTTLE.neck - 0.01, 2.0]);
+  // twin crisp moulded rings above the label
+  pts.push([R, 0.925], [R + 0.014, 0.935], [R + 0.014, 0.965], [R, 0.975], [R, 1.005],
+    [R + 0.014, 1.015], [R + 0.014, 1.045], [R, 1.055], [R, 1.07]);
+  // long, gentle shoulder up to a wide neck (fluted later)
+  bezier([R, 1.07], [R, 1.40], [BOTTLE.neck + 0.05, 1.56], [BOTTLE.neck, 1.80], 34, pts);
+  // neck support ring
+  pts.push([BOTTLE.neck, 1.815], [0.505, NECK.ring - 0.008], [0.512, NECK.ring + 0.004], [0.505, NECK.ring + 0.03],
+    [BOTTLE.neck, NECK.ring + 0.04]);
+  // tamper-band seat
+  pts.push([0.415, 1.90], [0.428, 1.92], [0.428, 1.955], [NECK.finishR, 1.975]);
+  // thread zone (dense so the helix displacement reads)
+  for (let y = NECK.threadsFrom; y <= NECK.threadsTo + 1e-6; y += 0.0045) pts.push([NECK.finishR, y]);
+  // rounded lip + inner bore
+  pts.push([0.40, NECK.lip - 0.015], [0.392, NECK.lip], [0.372, NECK.lip + 0.004], [0.356, NECK.lip - 0.01], [0.35, 2.17]);
   return pts;
 }
 
+/* Surface details applied as displacement on the lathe:
+   - 9 soft flutes running up the shoulder (grip + light catchers)
+   - a 5-petal pushed-up base
+   - a helical thread on the finish */
+const smoothR = (a, b, x) => { const t = Math.min(1, Math.max(0, (x - a) / (b - a))); return t * t * (3 - 2 * t); };
+function flute(a, y) {
+  const env = smoothR(1.12, 1.26, y) * (1 - smoothR(1.60, 1.76, y));
+  return 1 - 0.05 * Math.pow(0.5 + 0.5 * Math.cos(a * 9), 2.2) * env;
+}
+function petal(a, y) {
+  const w = 1 - smoothR(-1.785, -1.60, y);
+  return Math.pow(0.5 + 0.5 * Math.cos(a * 5), 3) * w;
+}
+function sculpt(geo, { threads = false, base = true, inset = 1 } = {}) {
+  const p = geo.attributes.position;
+  for (let i = 0; i < p.count; i++) {
+    const x = p.getX(i), y = p.getY(i), z = p.getZ(i);
+    const r = Math.hypot(x, z);
+    if (r < 1e-5) continue;
+    const a = Math.atan2(x, z);
+    let k = flute(a, y);
+    let ny = y;
+    if (base && y < -1.55 && r > 0.2) {
+      const v = petal(a, y);
+      k *= 1 - 0.085 * v;
+      ny = y + 0.06 * v * smoothR(0.2, 0.5, r) * inset;
+    }
+    let nr = r * k;
+    if (threads && y > NECK.threadsFrom && y < NECK.threadsTo && r > 0.39) {
+      const env = smoothR(NECK.threadsFrom, NECK.threadsFrom + 0.03, y) * (1 - smoothR(NECK.threadsTo - 0.03, NECK.threadsTo, y));
+      const ph = a + TAU * (y - NECK.threadsFrom) / 0.085;
+      nr += 0.022 * Math.pow(Math.max(0, Math.cos(ph)), 3) * env;
+    }
+    p.setXYZ(i, (x / r) * nr, ny, (z / r) * nr);
+  }
+  geo.computeVertexNormals();
+  // weld the lathe seam normals (first and last ring share positions)
+  const n = geo.attributes.normal;
+  const per = geo.userData.points, segs = geo.userData.segments;
+  if (per && segs) {
+    for (let j = 0; j < per; j++) {
+      const i0 = j, i1 = segs * per + j;
+      const nx = n.getX(i0) + n.getX(i1), nyy = n.getY(i0) + n.getY(i1), nz = n.getZ(i0) + n.getZ(i1);
+      const l = Math.hypot(nx, nyy, nz) || 1;
+      n.setXYZ(i0, nx / l, nyy / l, nz / l); n.setXYZ(i1, nx / l, nyy / l, nz / l);
+    }
+  }
+  return geo;
+}
+function lathe(pts, segs) {
+  const g = new THREE.LatheGeometry(pts.map(([r, y]) => new THREE.Vector2(r, y)), segs);
+  g.userData.points = pts.length; g.userData.segments = segs;
+  return g;
+}
+
 function liquidProfile(body) {
+  // inner surface of the wall: pulled in and lifted off the base
   const out = [];
   for (let i = 0; i < body.length; i++) {
     const [r, y] = body[i];
     if (y >= BOTTLE.fill) {
       const [r0, y0] = body[i - 1];
       const rf = r0 + (r - r0) * ((BOTTLE.fill - y0) / (y - y0));
-      out.push([rf * 0.965, BOTTLE.fill], [0, BOTTLE.fill]);
+      // meniscus: the surface climbs the wall slightly
+      out.push([rf * 0.962, BOTTLE.fill + 0.012], [rf * 0.93, BOTTLE.fill], [rf * 0.8, BOTTLE.fill - 0.004], [0, BOTTLE.fill - 0.004]);
       break;
     }
-    out.push([Math.min(r, BOTTLE.radius) * 0.965, Math.max(y, -1.72)]);
+    const lift = y < -1.3 ? 0.028 : 0;
+    out.push([Math.min(r, BOTTLE.radius + 0.012) * 0.962, y + lift]);
   }
-  out[0] = [0, -1.70];
+  out[0] = [0, body[0][1] + 0.03];
   return out;
 }
-const LIQ_BOTTOM = -1.72;
+const LIQ_BOTTOM = -1.76;
 
 /* =========================================================
    3D scene
@@ -127,28 +196,92 @@ function createScene() {
   }
   renderer.setPixelRatio(Math.min(devicePixelRatio, coarse ? 1.5 : 2));
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
-  renderer.toneMappingExposure = 1.05;
+  renderer.toneMappingExposure = 1.0;
   renderer.outputColorSpace = THREE.SRGBColorSpace;
+  renderer.setClearColor(0x000000, 0); // transparent: the #scenes photo layer shows through
   renderer.autoClear = false;
 
   const scene = new THREE.Scene();
   const camera = new THREE.PerspectiveCamera(35, 1, 0.1, 100);
   camera.position.set(0, 0, 8);
 
+  /* ---- Studio environment ----
+     A procedural product-photography studio baked to a PMREM: two tall strip softboxes,
+     an overhead box, a warm kicker and a dim front fill in a near-black room. Strip boxes
+     are what give real bottle shots their long vertical highlights. */
   const pmrem = new THREE.PMREMGenerator(renderer);
-  scene.environment = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
-  scene.environmentIntensity = 0.55;
+  function studio() {
+    const env = new THREE.Scene();
+    const room = new THREE.Mesh(new THREE.BoxGeometry(30, 20, 30),
+      new THREE.MeshBasicMaterial({ color: 0x050506, side: THREE.BackSide }));
+    env.add(room);
+    const floor = new THREE.Mesh(new THREE.PlaneGeometry(30, 30), new THREE.MeshBasicMaterial({ color: 0x0b0b0d }));
+    floor.rotation.x = -Math.PI / 2; floor.position.y = -6;
+    env.add(floor);
+    const box = (w, h, x, y, z, ry, rx, I, tint = 0xffffff) => {
+      const m = new THREE.MeshBasicMaterial({ color: tint });
+      m.color.multiplyScalar(I);
+      const p = new THREE.Mesh(new THREE.PlaneGeometry(w, h), m);
+      p.position.set(x, y, z); p.rotation.set(rx, ry, 0);
+      env.add(p);
+    };
+    box(1.4, 11, -6.5, 0.5, 2.5, Math.PI / 2 - 0.35, 0, 9);          // key strip, left-front
+    box(1.0, 11, 6.5, 0.2, -1.0, -Math.PI / 2 + 0.2, 0, 6);          // rim strip, right-back
+    box(0.6, 9, -3.0, 0, -8.0, 0.25, 0, 3.2, 0xfff2e0);              // warm back kicker
+    box(9, 9, 0, 9.5, 0, 0, Math.PI / 2, 2.2);                        // overhead
+    box(10, 4, 0, -2.5, 10, Math.PI, 0, 0.35);                       // dim front fill
+    return pmrem.fromScene(env, 0.015).texture;
+  }
+  scene.environment = studio();
+  scene.environmentIntensity = 1.0;
 
-  scene.add(new THREE.AmbientLight(0xffffff, 0.15));
-  const key = new THREE.DirectionalLight(0xffffff, 1.6);
-  key.position.set(3, 4, 5);
+  scene.add(new THREE.HemisphereLight(0xdfe6ff, 0x0a0a0c, 0.25));
+  const key = new THREE.DirectionalLight(0xfff6ea, 1.5);
+  key.position.set(-3.5, 4, 5);
   scene.add(key);
-  const rimA = new THREE.PointLight(0xc8ff2e, 26);
-  rimA.position.set(-3.2, 1.4, -1.8);
+  // rim lights: mostly white with a breath of flavour colour
+  const rimA = new THREE.PointLight(0xffffff, 16);
+  rimA.position.set(-3.2, 1.6, -2.2);
   scene.add(rimA);
-  const rimB = new THREE.PointLight(0xc8ff2e, 18);
-  rimB.position.set(3.2, -1.2, -1.6);
+  const rimB = new THREE.PointLight(0xc8ff2e, 10);
+  rimB.position.set(3.2, -1.0, -1.8);
   scene.add(rimB);
+
+  /* ---- Condensation: procedural droplet normal map ---- */
+  function condensationMap() {
+    const S = 1024, cv = document.createElement('canvas'); cv.width = cv.height = S;
+    const c = cv.getContext('2d');
+    const img = c.createImageData(S, S), d = img.data;
+    for (let i = 0; i < d.length; i += 4) { d[i] = 128; d[i + 1] = 128; d[i + 2] = 255; d[i + 3] = 255; }
+    let seed = 7;
+    const rnd = () => ((seed = (seed * 16807) % 2147483647) / 2147483647);
+    const drop = (cx, cy, rx, ry) => {
+      const x0 = Math.floor(cx - rx - 1), x1 = Math.ceil(cx + rx + 1), y0 = Math.floor(cy - ry - 1), y1 = Math.ceil(cy + ry + 1);
+      for (let y = y0; y <= y1; y++) for (let x = x0; x <= x1; x++) {
+        const u = (x - cx) / rx, v = (y - cy) / ry, q = u * u + v * v;
+        if (q >= 1) continue;
+        const nz = Math.sqrt(1 - q);
+        const px = ((x % S) + S) % S, py = ((y % S) + S) % S, o = (py * S + px) * 4;
+        d[o] = 128 + u * 120; d[o + 1] = 128 - v * 120; d[o + 2] = 128 + nz * 127;
+      }
+    };
+    for (let i = 0; i < 5200; i++) { const r = 1.2 + Math.pow(rnd(), 3) * 5; drop(rnd() * S, rnd() * S, r, r * (0.9 + rnd() * 0.25)); }
+    for (let i = 0; i < 260; i++) { const r = 6 + Math.pow(rnd(), 2) * 12; drop(rnd() * S, rnd() * S, r, r * (1.05 + rnd() * 0.3)); }
+    // a few run trails
+    for (let i = 0; i < 26; i++) {
+      const x = rnd() * S, y = rnd() * S, len = 40 + rnd() * 160, w = 2.5 + rnd() * 3;
+      for (let k = 0; k < len; k += 2) drop(x + Math.sin(k * 0.05 + i) * 1.5, y + k, w * (1 - k / len * 0.5), w * 1.4);
+      drop(x, y + len, w * 1.8, w * 2.2);
+    }
+    c.putImageData(img, 0, 0);
+    const t = new THREE.CanvasTexture(cv);
+    t.wrapS = t.wrapT = THREE.RepeatWrapping;
+    t.anisotropy = renderer.capabilities.getMaxAnisotropy();
+    return t;
+  }
+  const dew = condensationMap();
+  const dewShell = dew.clone(); dewShell.repeat.set(4, 4); dewShell.needsUpdate = true;
+  const dewLabel = dew.clone(); dewLabel.repeat.set(3, 1.6); dewLabel.needsUpdate = true;
 
   /* ---- Bottle ---- */
   const v2 = (pts) => pts.map(([r, y]) => new THREE.Vector2(r, y));
@@ -162,20 +295,123 @@ function createScene() {
   bottle.add(inner);
   scene.add(bottle);
 
-  // PET shell: clear, thick-walled, glossy
+  // PET shell: genuinely clear (transmission), both walls rendered so the back wall refracts too
   const shellMat = new THREE.MeshPhysicalMaterial({
-    color: 0xffffff, roughness: 0.04, metalness: 0, transmission: 1, thickness: 0.45, ior: 1.46,
-    clearcoat: 1, clearcoatRoughness: 0.02, specularIntensity: 1, envMapIntensity: 1.2,
-    attenuationColor: new THREE.Color('#e9f2ff'), attenuationDistance: 3,
+    color: 0xffffff, roughness: 0.03, metalness: 0, transmission: 1, thickness: 0.09, ior: 1.57,
+    specularIntensity: 1, specularColor: new THREE.Color('#ffffff'), envMapIntensity: 1.35,
+    clearcoat: 1, clearcoatRoughness: 0.03, clearcoatNormalMap: dewShell, clearcoatNormalScale: new THREE.Vector2(0.55, 0.55),
+    normalMap: dewShell, normalScale: new THREE.Vector2(0.18, 0.18),
+    attenuationColor: new THREE.Color('#eef5ff'), attenuationDistance: 2.5,
+    side: THREE.DoubleSide,
   });
-  inner.add(new THREE.Mesh(new THREE.LatheGeometry(v2(body), 180), shellMat));
+  const shell = new THREE.Mesh(sculpt(lathe(body, 220), { threads: true }), shellMat);
+  shell.renderOrder = 2;
+  inner.add(shell);
 
-  const liquidMat = new THREE.MeshPhysicalMaterial({
-    color: FLAVOURS.volt.liquid, roughness: 0.1, metalness: 0, clearcoat: 1, clearcoatRoughness: 0.04,
-    emissive: FLAVOURS.volt.liquid, emissiveIntensity: 0.12, envMapIntensity: 0.7, side: THREE.DoubleSide,
+  /* Liquid: a custom physically-inspired shader. For every pixel we trace the view ray
+     through the liquid volume (analytic cylinder of the local radius, clipped by the
+     surface and the base) and apply Beer–Lambert absorption to a soft studio backlight,
+     plus in-scatter, Fresnel reflection of the softboxes, a meniscus line and rising
+     micro-bubbles. It is opaque, so the PET shell's transmission pass refracts it. */
+  const liquidUni = {
+    uColor: { value: new THREE.Color(FLAVOURS.volt.liquid) },
+    uInk: { value: new THREE.Color(FLAVOURS.volt.ink) },
+    uAxisO: { value: new THREE.Vector3() }, uAxisD: { value: new THREE.Vector3(0, 1, 0) },
+    uScale: { value: 1 }, uTop: { value: 1 }, uBot: { value: -1 }, uTime: { value: 0 },
+    uLightDir: { value: new THREE.Vector3(-0.45, 0.5, 0.75).normalize() },
+  };
+  const liquidMat = new THREE.ShaderMaterial({
+    uniforms: liquidUni,
+    vertexShader: /* glsl */`
+      varying vec3 vWorld; varying vec3 vN;
+      void main() {
+        vec4 w = modelMatrix * vec4(position, 1.0);
+        vWorld = w.xyz;
+        vN = normalize(mat3(modelMatrix) * normal);
+        gl_Position = projectionMatrix * viewMatrix * w;
+      }`,
+    fragmentShader: /* glsl */`
+      uniform vec3 uColor, uInk, uAxisO, uAxisD, uLightDir;
+      uniform float uScale, uTop, uBot, uTime;
+      varying vec3 vWorld; varying vec3 vN;
+      float h31(vec3 p) { p = fract(p * 0.3183099 + 0.1); p *= 17.0; return fract(p.x * p.y * p.z * (p.x + p.y + p.z)); }
+      float soft(vec3 r) {
+        // analytic softboxes matching the studio env (left key strip, right rim strip, overhead)
+        float a = smoothstep(0.16, 0.0, abs(r.x + 0.88)) * smoothstep(0.9, 0.3, abs(r.y)) * step(0.0, -r.x);
+        float b = smoothstep(0.12, 0.0, abs(r.x - 0.92)) * smoothstep(0.9, 0.3, abs(r.y)) * step(0.0, r.x) * 0.7;
+        float c = smoothstep(0.75, 0.95, r.y) * 0.35;
+        return a + b + c;
+      }
+      void main() {
+        vec3 V = normalize(vWorld - cameraPosition);
+        vec3 N = normalize(vN);
+        if (!gl_FrontFacing) N = -N;
+        vec3 rel = vWorld - uAxisO;
+        float h = dot(rel, uAxisD);
+        vec3 radial = rel - uAxisD * h;
+        // path length through the liquid: exit of a cylinder of this pixel's local radius
+        vec3 d = V - uAxisD * dot(V, uAxisD);
+        float a = dot(d, d);
+        float t = a > 1e-5 ? max(0.0, -2.0 * dot(radial, d) / a) : 10.0;
+        float dv = dot(V, uAxisD);
+        if (dv > 1e-4) t = min(t, (uTop - h) / dv);
+        if (dv < -1e-4) t = min(t, (uBot - h) / dv);
+        float dist = clamp(t / uScale, 0.0, 3.0);
+
+        vec3 col0 = max(uColor, vec3(0.004));
+        vec3 sigma = -log(clamp(col0 * 1.25, 0.002, 0.97)) * 1.15;
+        vec3 T = exp(-sigma * dist);
+        // studio backlight seen through the volume (a lit sweep: brighter low and to the left)
+        float hn = (h - uBot) / max(1e-4, uTop - uBot);
+        vec3 back = vec3(1.0, 0.985, 0.96) * (0.42 + 0.3 * smoothstep(1.0, 0.0, hn));
+        vec3 col = back * T;
+        // in-scatter: the drink glows a little in its own colour
+        col += col0 * (1.0 - T) * 0.38;
+        // micro-bubbles marched along the ray
+        float bub = 0.0;
+        for (int i = 0; i < 7; i++) {
+          float s = (float(i) + 0.5) / 7.0 * min(dist, 1.6);
+          vec3 q = (vWorld + V * s * uScale - uAxisO) / uScale;
+          q -= uAxisD * uTime * (0.05 + 0.03 * float(i & 1));
+          vec3 g = q * 22.0;
+          vec3 cell = floor(g), f = fract(g) - 0.5;
+          float k = h31(cell);
+          if (k > 0.965) {
+            vec3 off = (vec3(h31(cell + 1.3), h31(cell + 2.7), h31(cell + 4.1)) - 0.5) * 0.55;
+            float r = length(f - off);
+            bub += smoothstep(0.09, 0.0, r) * exp(-dot(sigma, vec3(0.333)) * s * 1.4);
+          }
+        }
+        col += vec3(1.0, 0.99, 0.95) * bub * 0.9;
+        // diffuse lift on the lit side
+        col += col0 * max(0.0, dot(N, uLightDir)) * 0.12;
+        // meniscus: a thin bright line where the surface meets the wall
+        float toTop = (uTop - h) / uScale;
+        col += mix(uInk, vec3(1.0), 0.6) * exp(-pow(toTop * 70.0, 2.0)) * 0.9;
+        col += vec3(1.0) * exp(-toTop * 28.0) * 0.06;
+        // Fresnel reflection of the softboxes
+        float fr = 0.02 + 0.98 * pow(1.0 - max(0.0, dot(N, -V)), 5.0);
+        col += soft(reflect(V, N)) * fr * 1.6;
+        gl_FragColor = vec4(col, 1.0);
+        #include <tonemapping_fragment>
+        #include <colorspace_fragment>
+      }`,
   });
-  const liquid = new THREE.Mesh(new THREE.LatheGeometry(v2(liquidProfile(body)), 128), liquidMat);
+  const liquid = new THREE.Mesh(sculpt(lathe(liquidProfile(body), 160)), liquidMat);
   inner.add(liquid);
+  const _o = new THREE.Vector3(), _d = new THREE.Vector3(), _s = new THREE.Vector3(), _q = new THREE.Quaternion();
+  function updateLiquidUniforms(fill, time) {
+    inner.updateWorldMatrix(true, false);
+    inner.matrixWorld.decompose(_o, _q, _s);
+    _d.set(0, 1, 0).applyQuaternion(_q);
+    const sc = _s.y;
+    liquidUni.uAxisO.value.copy(_o);
+    liquidUni.uAxisD.value.copy(_d);
+    liquidUni.uScale.value = sc;
+    liquidUni.uBot.value = (LIQ_BOTTOM + 0.02) * sc;
+    liquidUni.uTop.value = (LIQ_BOTTOM + (BOTTLE.fill - LIQ_BOTTOM) * Math.max(0.0001, Math.min(1, fill))) * sc;
+    liquidUni.uTime.value = time;
+  }
   function setFill(f) {
     const k = Math.max(0.0001, Math.min(1, f));
     liquid.visible = f > 0.01;
@@ -200,7 +436,8 @@ function createScene() {
   const labelMat = new THREE.MeshPhysicalMaterial({
     map: texColor, roughnessMap: texOrm, metalnessMap: texOrm, roughness: 1, metalness: 1,
     bumpMap: texBump, bumpScale: 1.2,
-    clearcoat: 0.7, clearcoatRoughness: 0.14,
+    clearcoat: 0.75, clearcoatRoughness: 0.08,
+    clearcoatNormalMap: dewLabel, clearcoatNormalScale: new THREE.Vector2(0.45, 0.45),
     iridescence: 0.22, iridescenceIOR: 1.35, iridescenceThicknessRange: [180, 420],
     alphaTest: 0.5, side: THREE.FrontSide,
   });
@@ -210,7 +447,7 @@ function createScene() {
   inner.add(label);
   // plain paper backing, seen through the clear window from inside the bottle
   const labelBack = new THREE.Mesh(label.geometry, new THREE.MeshStandardMaterial({
-    map: texBump, color: 0xd8dbd4, roughness: 0.85, alphaTest: 0.5, side: THREE.BackSide,
+    map: texBump, color: 0x8e918b, roughness: 0.9, alphaTest: 0.5, side: THREE.BackSide, // dim: print only faintly shows through
   }));
   labelBack.position.copy(label.position);
   inner.add(labelBack);
@@ -379,29 +616,34 @@ function createScene() {
     texColor.needsUpdate = texOrm.needsUpdate = texBump.needsUpdate = true;
   }
 
-  // Wide sports cap: bevelled lathe + fine knurling, printed top
-  const CAP_H = 0.5, CAP_Y = BOTTLE.top - CAP_H / 2;
+  // Low-profile sports cap: crisp bevel, fine knurling, satin moulded plastic, printed top
+  const CAP_H = 0.30, CAP_Y = BOTTLE.top - CAP_H / 2;
   const cr = BOTTLE.capR;
-  const capProfile = [[0, CAP_H / 2], [cr - 0.06, CAP_H / 2], [cr - 0.02, CAP_H / 2 - 0.012], [cr, CAP_H / 2 - 0.04],
-    [cr, -CAP_H / 2 + 0.05], [cr + 0.006, -CAP_H / 2 + 0.03], [cr + 0.006, -CAP_H / 2 + 0.005], [cr - 0.03, -CAP_H / 2], [cr - 0.05, -CAP_H / 2 + 0.06]];
+  const hc = CAP_H / 2;
+  const capProfile = [[0, hc - 0.006], [cr - 0.075, hc - 0.004], [cr - 0.05, hc], [cr - 0.022, hc - 0.006], [cr - 0.006, hc - 0.024], [cr, hc - 0.045],
+    [cr, -hc + 0.035], [cr - 0.004, -hc + 0.012], [cr - 0.014, -hc], [cr - 0.032, -hc], [cr - 0.034, -hc + 0.05]];
   const dense = [];
   for (let i = 0; i < capProfile.length; i++) {
     dense.push(capProfile[i]);
     const nxt = capProfile[i + 1];
-    if (nxt && Math.abs(nxt[1] - capProfile[i][1]) > 0.1) for (let k = 1; k < 8; k++) dense.push([capProfile[i][0], capProfile[i][1] + (nxt[1] - capProfile[i][1]) * k / 8]);
+    if (nxt && Math.abs(nxt[1] - capProfile[i][1]) > 0.05) for (let k = 1; k < 10; k++) dense.push([capProfile[i][0], capProfile[i][1] + (nxt[1] - capProfile[i][1]) * k / 10]);
   }
-  const capGeo = new THREE.LatheGeometry(v2(dense), 400);
+  const capGeo = new THREE.LatheGeometry(v2(dense), 480);
   const cpos = capGeo.attributes.position;
   for (let i = 0; i < cpos.count; i++) {
     const x = cpos.getX(i), z = cpos.getZ(i), y = cpos.getY(i);
     const r = Math.hypot(x, z);
-    if (r < cr - 0.001 || y > CAP_H / 2 - 0.05 || y < -CAP_H / 2 + 0.055) continue;
+    if (r < cr - 0.001 || y > hc - 0.05 || y < -hc + 0.04) continue;
     const a = Math.atan2(x, z);
-    const nr = cr - 0.012 + 0.014 * Math.pow(0.5 + 0.5 * Math.cos(a * 100), 1.5);
+    const fade = smoothR(hc - 0.05, hc - 0.075, y) * smoothR(-hc + 0.04, -hc + 0.06, y);
+    const nr = cr - 0.009 * fade + 0.009 * fade * Math.pow(Math.abs(Math.cos(a * 60)), 0.6);
     cpos.setX(i, (x / r) * nr); cpos.setZ(i, (z / r) * nr);
   }
   capGeo.computeVertexNormals();
-  const capMat = new THREE.MeshPhysicalMaterial({ color: 0x14161b, roughness: 0.5, metalness: 0.05, clearcoat: 0.4, clearcoatRoughness: 0.4, sheen: 0.4, sheenColor: new THREE.Color('#5a6070') });
+  const capMat = new THREE.MeshPhysicalMaterial({
+    color: 0x16181d, roughness: 0.42, metalness: 0, specularIntensity: 0.6,
+    clearcoat: 0.25, clearcoatRoughness: 0.35, sheen: 0.25, sheenRoughness: 0.6, sheenColor: new THREE.Color('#6a7080'),
+  });
   const cap = new THREE.Group();
   cap.add(new THREE.Mesh(capGeo, capMat));
   const topCanvas = document.createElement('canvas'); topCanvas.width = topCanvas.height = 512;
@@ -415,18 +657,29 @@ function createScene() {
     c.fillText('P', 246, 262); c.beginPath(); c.arc(318, 300, 14, 0, TAU); c.fill();
     topTex.needsUpdate = true;
   }
-  const capTop = new THREE.Mesh(new THREE.CircleGeometry(cr - 0.07, 96),
-    new THREE.MeshPhysicalMaterial({ map: topTex, roughness: 0.45, clearcoat: 0.5 }));
-  capTop.rotation.x = -Math.PI / 2; capTop.position.y = CAP_H / 2 + 0.001;
+  const capTop = new THREE.Mesh(new THREE.CircleGeometry(cr - 0.075, 96),
+    new THREE.MeshPhysicalMaterial({ map: topTex, roughness: 0.4, clearcoat: 0.35, clearcoatRoughness: 0.3 }));
+  capTop.rotation.x = -Math.PI / 2; capTop.position.y = hc - 0.004 + 0.001;
   cap.add(capTop);
   cap.position.y = CAP_Y;
   inner.add(cap);
 
-  // accent tamper band
-  const bandMat = new THREE.MeshStandardMaterial({ color: FLAVOURS.volt.ink, emissive: FLAVOURS.volt.ink, emissiveIntensity: 0.5, roughness: 0.35, metalness: 0.2 });
-  const band = new THREE.Mesh(new THREE.CylinderGeometry(0.474, 0.474, 0.04, 128), bandMat);
-  band.position.y = 1.875;
+  // tamper band: a separate ring with a thin gap and bridges, in satin accent plastic
+  const bandMat = new THREE.MeshPhysicalMaterial({ color: FLAVOURS.volt.ink, roughness: 0.38, metalness: 0, clearcoat: 0.3, clearcoatRoughness: 0.3, sheen: 0.3, sheenColor: new THREE.Color('#ffffff') });
+  const bTop = BOTTLE.top - CAP_H - 0.016, bBot = bTop - 0.07, br = cr - 0.004;
+  const bandPts = [[br - 0.03, bBot + 0.004], [br - 0.006, bBot], [br, bBot + 0.008], [br, bTop - 0.008], [br - 0.006, bTop], [br - 0.03, bTop]];
+  const band = new THREE.Mesh(new THREE.LatheGeometry(v2(bandPts), 200), bandMat);
   inner.add(band);
+  // bridges across the gap (they snap when the cap is first opened)
+  const bridgeGeo = new THREE.BoxGeometry(0.012, 0.018, 0.02);
+  const bridges = new THREE.InstancedMesh(bridgeGeo, bandMat, 16);
+  const _m = new THREE.Matrix4();
+  for (let i = 0; i < 16; i++) {
+    const a = (i / 16) * TAU;
+    _m.makeRotationY(a).setPosition(Math.sin(a) * (br - 0.012), bTop + 0.008, Math.cos(a) * (br - 0.012));
+    bridges.setMatrixAt(i, _m);
+  }
+  inner.add(bridges);
 
   /* ---- Ambient particles ---- */
   const dotCanvas = document.createElement('canvas');
@@ -568,6 +821,21 @@ function createScene() {
       }`,
   });
   ovScene.add(new THREE.Mesh(new THREE.PlaneGeometry(2, 2), ovMat));
+  // the full-quality underwater path costs ~6ms at ~1.8MP: drop to the cheap path on phones / huge canvases
+  function setOverlayQuality() {
+    if (!liquidUniforms.uQuality) return;
+    liquidUniforms.uQuality.value = (coarse || renderer.domElement.width > 2500) ? 0 : 1;
+  }
+  // The realistic underwater shader lives in inside-liquid.js; the inline one above is the fallback.
+  import('./inside-liquid.js').then((m) => {
+    if (!m || typeof m.INSIDE_FRAGMENT !== 'string') return;
+    if (m.INSIDE_EXTRA_UNIFORMS) {
+      for (const [k, v] of Object.entries(m.INSIDE_EXTRA_UNIFORMS)) if (!(k in liquidUniforms)) liquidUniforms[k] = { value: v };
+    }
+    ovMat.fragmentShader = m.INSIDE_FRAGMENT;
+    ovMat.needsUpdate = true;
+    setOverlayQuality();
+  }).catch((err) => console.info('inside-liquid.js not available, using built-in shader.', err && err.message));
 
   /* ---- Scroll-driven poses ----
      Each [data-pose] section declares where the bottle sits when that section is centred
@@ -623,11 +891,15 @@ function createScene() {
     halfH = camera.position.z * Math.tan(THREE.MathUtils.degToRad(camera.fov / 2));
     halfW = halfH * camera.aspect;
     liquidUniforms.uAspect.value = camera.aspect;
+    setOverlayQuality();
     readPoses();
   }
   resize();
   addEventListener('resize', resize);
   new ResizeObserver(() => readPoses()).observe(document.body);
+  addEventListener('load', resize);
+  if (document.fonts) document.fonts.ready.then(resize);
+  setTimeout(resize, 1200);
 
   /* ---- Pointer ---- */
   const mouse = { x: 0, y: 0, tx: 0, ty: 0 };
@@ -681,6 +953,7 @@ function createScene() {
     cap.position.y = CAP_Y + cur.cap * 0.8;
     cap.rotation.y = -cur.cap * 3.2;
     setFill(cur.fill);
+    updateLiquidUniforms(cur.fill, t);
 
     const arr = pGeo.attributes.position.array;
     for (let i = 0; i < N; i++) {
@@ -704,6 +977,8 @@ function createScene() {
     if (inside > 0.002) renderer.render(ovScene, ovCam);
   });
 
+  if (window.primo) window.primo.three = { renderer, scene, shell, liquid, label, cap, shellMat, liquidMat, labelMat };
+
   /* ---- Public API ---- */
   let current = 'volt';
   function setFlavour(id) {
@@ -716,18 +991,19 @@ function createScene() {
     const dur = reduced ? 0.01 : 1.1;
     if (hasGsap) {
       gsap.to(extra, { spin: extra.spin + TAU, duration: dur, ease: 'power3.inOut' });
-      gsap.to(liquidMat.color, { r: liquidTo.r, g: liquidTo.g, b: liquidTo.b, duration: dur, ease: 'power2.inOut' });
-      gsap.to(liquidMat.emissive, { r: liquidTo.r, g: liquidTo.g, b: liquidTo.b, duration: dur });
+      gsap.to(liquidUni.uColor.value, { r: liquidTo.r, g: liquidTo.g, b: liquidTo.b, duration: dur, ease: 'power2.inOut' });
+      gsap.to(liquidUni.uInk.value, { r: inkTo.r, g: inkTo.g, b: inkTo.b, duration: dur });
       gsap.to(rimB.color, { r: inkTo.r, g: inkTo.g, b: inkTo.b, duration: dur });
+      gsap.to(pMat.color, { r: inkTo.r, g: inkTo.g, b: inkTo.b, duration: dur });
       gsap.to(liquidUniforms.uMid.value, { x: midTo.x, y: midTo.y, z: midTo.z, duration: dur });
       gsap.to(liquidUniforms.uLight.value, { x: lightTo.x, y: lightTo.y, z: lightTo.z, duration: dur });
       gsap.delayedCall(dur * 0.42, () => {
         drawLabel(f); drawCapTop(f);
-        bandMat.color.copy(inkTo); bandMat.emissive.copy(inkTo);
+        bandMat.color.copy(inkTo);
       });
     } else {
-      drawLabel(f); drawCapTop(f); liquidMat.color.copy(liquidTo); liquidMat.emissive.copy(liquidTo); rimB.color.copy(inkTo);
-      bandMat.color.copy(inkTo); bandMat.emissive.copy(inkTo);
+      drawLabel(f); drawCapTop(f); liquidUni.uColor.value.copy(liquidTo); liquidUni.uInk.value.copy(inkTo); rimB.color.copy(inkTo);
+      pMat.color.copy(inkTo); bandMat.color.copy(inkTo);
       liquidUniforms.uMid.value.copy(midTo); liquidUniforms.uLight.value.copy(lightTo);
     }
   }
@@ -781,6 +1057,7 @@ function revealOnScroll() {
 
 function intro() {
   const loader = document.getElementById('loader');
+  if (!loader) { if (api) api.extra.intro = 1; return; }
   if (!hasGsap) { loader.remove(); if (api) api.extra.intro = 1; return; }
   const tl = gsap.timeline();
   tl.to(loader, { opacity: 0, duration: 0.6, ease: 'power2.out', onComplete: () => loader.remove() });
@@ -803,33 +1080,25 @@ const bar = document.querySelector('.progress');
 let lastY = scrollY;
 function onScroll() {
   const y = scrollY;
-  nav.classList.toggle('scrolled', y > 40);
-  nav.classList.toggle('hide', y > lastY && y > innerHeight * 0.8);
+  if (nav) {
+    nav.classList.toggle('scrolled', y > 40);
+    nav.classList.toggle('hide', y > lastY && y > innerHeight * 0.8);
+  }
   lastY = y;
   const max = document.documentElement.scrollHeight - innerHeight;
-  bar.style.transform = `scaleX(${max > 0 ? y / max : 0})`;
+  if (bar) bar.style.transform = `scaleX(${max > 0 ? y / max : 0})`;
 }
 addEventListener('scroll', onScroll, { passive: true });
 onScroll();
 
-// Flavour configurator
-const btns = document.querySelectorAll('.flavour-btn');
-const fName = document.getElementById('flavourName');
-const fDesc = document.getElementById('flavourDesc');
-btns.forEach((b) => b.addEventListener('click', () => {
-  const id = b.dataset.flavour;
-  const f = FLAVOURS[id];
-  btns.forEach((x) => x.setAttribute('aria-pressed', String(x === b)));
-  root.style.setProperty('--ink', f.ink);
-  root.style.setProperty('--glow', f.glow);
-  if (hasGsap && !reduced) {
-    gsap.timeline()
-      .to([fName, fDesc], { y: -12, opacity: 0, duration: 0.25, ease: 'power2.in', stagger: 0.04 })
-      .add(() => { fName.textContent = f.name; fDesc.textContent = f.desc; })
-      .fromTo([fName, fDesc], { y: 14, opacity: 0 }, { y: 0, opacity: 1, duration: 0.5, ease: 'power3.out', stagger: 0.05 });
-  } else { fName.textContent = f.name; fDesc.textContent = f.desc; }
-  if (api) api.setFlavour(id);
-}));
+// Flavour: driven by scroll (scenes.js fires 'primo:flavour'). If it fires before the
+// labels are drawn, remember it and apply once the bottle is ready.
+let pendingFlavour = null, bottleReady = false;
+addEventListener('primo:flavour', (e) => {
+  const id = e.detail && e.detail.id;
+  if (!FLAVOURS[id]) return;
+  if (api && bottleReady) api.setFlavour(id); else pendingFlavour = id;
+});
 
 // Magnetic buttons
 if (!coarse && !reduced && hasGsap) {
@@ -845,7 +1114,7 @@ if (!coarse && !reduced && hasGsap) {
 // Waitlist form (demo only, nothing is sent)
 const form = document.getElementById('joinForm');
 const msg = document.getElementById('formMsg');
-form.addEventListener('submit', (e) => {
+if (form) form.addEventListener('submit', (e) => {
   e.preventDefault();
   const v = form.email.value.trim();
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v)) {
@@ -860,13 +1129,15 @@ form.addEventListener('submit', (e) => {
   msg.className = 'form-msg ok';
   msg.textContent = 'You’re on the list. (Demo: nothing was actually sent.)';
 });
-form.email.addEventListener('input', () => form.classList.remove('error'));
+if (form) form.email.addEventListener('input', () => form.classList.remove('error'));
 
 // Boot
 const timeout = new Promise((r) => setTimeout(r, 4000));
 Promise.race([fontsReady, timeout]).then(() => {
   if (!location.hash) { lenis ? lenis.scrollTo(0, { immediate: true, force: true }) : scrollTo(0, 0); }
   if (api) api.drawLabel();
+  bottleReady = true;
+  if (api && pendingFlavour) api.setFlavour(pendingFlavour);
   revealOnScroll();
   intro();
   if (hasGsap) ScrollTrigger.refresh();

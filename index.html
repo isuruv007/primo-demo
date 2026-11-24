@@ -7,22 +7,22 @@
   <meta name="description" content="PRIMO is a fictional hydration drink brand — a design and interaction demo.">
   <meta name="theme-color" content="#090a0d">
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%23090a0d'/%3E%3Ccircle cx='16' cy='16' r='6' fill='%23c8ff2e'/%3E%3C/svg%3E">
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
+  <link rel="preload" href="fonts/spacegrotesk-V8mDoQDjQSkFtoMM3T6r8E7mPbF4C_k3HqU.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="fonts/fonts.css">
   <link rel="stylesheet" href="styles.css">
   <script type="importmap">
     {
       "imports": {
-        "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js",
-        "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/"
+        "three": "./vendor/three.module.min.js"
       }
     }
   </script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js" defer></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js" defer></script>
-  <script src="https://unpkg.com/lenis@1.1.13/dist/lenis.min.js" defer></script>
+  <script src="vendor/gsap.min.js" defer></script>
+  <script src="vendor/ScrollTrigger.min.js" defer></script>
+  <script src="vendor/lenis.min.js" defer></script>
   <script type="module" src="main.js"></script>
+  <script type="module" src="scenes.js"></script>
+  <script src="cart.js" defer></script>
 </head>
 <body>
   <div class="loader" id="loader" aria-hidden="true">
@@ -31,21 +31,58 @@
   </div>
 
   <div class="bg" aria-hidden="true"></div>
+
+  <!-- Photographic life scenes + hero lighting rig, behind the transparent WebGL canvas -->
+  <div class="scenes" id="scenes" aria-hidden="true">
+    <div class="scene-rig"><i class="beam b1"></i><i class="beam b2"></i><i class="sweep"></i><i class="floor"></i></div>
+    <figure class="scene" data-scene="run">
+      <picture>
+        <source media="(max-width: 819px)" srcset="img/photo-1594882645126-14020914d58d-900x1600.jpg">
+        <img src="img/photo-1594882645126-14020914d58d-2000.jpg" alt="" decoding="async" fetchpriority="low">
+      </picture>
+    </figure>
+    <figure class="scene" data-scene="work">
+      <picture>
+        <source media="(max-width: 819px)" srcset="img/photo-1504384308090-c894fdcc538d-900x1600.jpg">
+        <img src="img/photo-1504384308090-c894fdcc538d-2000.jpg" alt="" decoding="async" fetchpriority="low">
+      </picture>
+    </figure>
+    <figure class="scene" data-scene="gym">
+      <picture>
+        <source media="(max-width: 819px)" srcset="img/photo-1641337221253-fdc7237f6b61-900x1600.jpg">
+        <img src="img/photo-1641337221253-fdc7237f6b61-2000.jpg" alt="" decoding="async" fetchpriority="low">
+      </picture>
+    </figure>
+    <figure class="scene" data-scene="desk">
+      <picture>
+        <source media="(max-width: 819px)" srcset="img/photo-1669279857939-1f7762f85c64-900x1600.jpg">
+        <img src="img/photo-1669279857939-1f7762f85c64-2000.jpg" alt="" decoding="async" fetchpriority="low">
+      </picture>
+    </figure>
+    <div class="scene-grade"></div>
+  </div>
+
   <canvas id="scene" aria-hidden="true"></canvas>
   <div class="grain" aria-hidden="true"></div>
   <div class="progress" aria-hidden="true"></div>
 
-  <header class="nav" id="nav">
-    <a href="#top" class="logo" aria-label="PRIMO home">PRIMO<span class="dot"></span></a>
-    <nav aria-label="Primary">
-      <ul class="nav-links">
-        <li><a href="#inside">Inside</a></li>
-        <li><a href="#flavours">Flavours</a></li>
-        <li><a href="#why">Numbers</a></li>
-      </ul>
-    </nav>
-    <a href="#join" class="btn btn-primary btn-sm magnetic">Get early access</a>
-  </header>
+  <nav class="nav" id="nav">
+    <a class="brand" href="index.html">PRIMO<span>.</span></a>
+    <div class="nav-links">
+      <a href="index.html#flavours">Flavours</a>
+      <a href="about.html">About</a>
+      <a href="feedback.html">Feedback</a>
+    </div>
+    <a class="nav-cart" href="shop.html" aria-label="Cart">Cart <span class="nav-cart-count" data-cart-count>0</span></a>
+  </nav>
+
+  <!-- Day rail: which flavour / scene you're in -->
+  <div class="day-rail" aria-hidden="true">
+    <span class="rail-count"><span class="rail-num">01</span>/04</span>
+    <span class="rail-name">Ember Citrus</span>
+    <span class="rail-dots"><i></i><i></i><i></i><i></i></span>
+    <span class="rail-bar"><b></b></span>
+  </div>
 
   <main id="top">
     <!-- HERO: the bottle is the logo -->
@@ -150,7 +187,7 @@
         <h2 data-split>Again? Always.</h2>
       </div>
       <div class="reveal-right" data-reveal>
-        <p class="lede">The clear window on the back shows exactly how much is left. Pick your next flavour below.</p>
+        <p class="lede">The clear window on the back shows exactly how much is left. Now take it through your day.</p>
       </div>
     </section>
 
@@ -162,25 +199,74 @@
       </div>
     </div>
 
-    <!-- FLAVOURS -->
-    <section class="section flavours" id="flavours"
-      data-pose='{"x":0,"y":0,"fh":0.74,"face":1}'
-      data-pose-m='{"y":0.4,"fh":0.36,"face":1}'>
-      <div class="flavour-copy">
-        <p class="kicker" data-reveal><span class="dot"></span>Flavours</p>
-        <h2 data-split>Four flavours. One standard.</h2>
-        <div class="flavour-detail" data-reveal aria-live="polite">
-          <h3 id="flavourName">Volt Lime</h3>
-          <p id="flavourDesc">Sharp lime with a flash of yuzu. The original, and still the loudest thing in the fridge.</p>
+    <!-- A DAY ON PRIMO: four life scenes, four flavours, chosen by scrolling -->
+    <div class="day" id="flavours" aria-label="Flavours: a day on PRIMO">
+      <section class="section day-intro">
+        <p class="kicker" data-reveal><span class="dot"></span>Flavours · A day on PRIMO</p>
+        <h2 data-split>Four moments. Four flavours.</h2>
+        <p class="lede" data-reveal>Keep scrolling to drink your way through a day. Every scene changes the flavour, and the whole page follows.</p>
+      </section>
+
+      <article class="section chapter" data-flavour="ember" data-scene="run">
+        <div class="chapter-pose approach" data-pose='{"x":0.33,"y":-0.02,"fh":0.72,"tilt":-0.05,"face":1,"turn":6.2832,"cap":0,"drain":0,"fill":1}' data-pose-m='{"y":0.3,"fh":0.4,"tilt":-0.04,"face":1,"fill":1}'></div>
+        <div class="chapter-pose sip" data-pose='{"x":0.3,"y":0.34,"fh":1.2,"tilt":0.86,"face":1,"turn":6.2832,"cap":0,"drain":0,"fill":0.72}' data-pose-m='{"y":0.36,"fh":0.66,"tilt":0.6,"face":1,"fill":0.72}'></div>
+        <div class="chapter-copy">
+          <p class="chapter-time"><span>06:30</span> The run</p>
+          <h2 class="chapter-name">Ember Citrus</h2>
+          <p class="chapter-line">First light, first mile.</p>
+          <p class="lede">Blood orange with a little ginger heat. Bright, warm and fast: the one that gets you out of the door.</p>
+          <div class="btn-row">
+            <button class="btn btn-primary magnetic" type="button" data-add-to-cart="ember">Add Ember Citrus</button>
+            <a class="btn btn-ghost" href="shop.html">Shop packs</a>
+          </div>
         </div>
-      </div>
-      <div class="flavour-list" role="group" aria-label="Choose a flavour" data-reveal>
-        <button class="flavour-btn" data-flavour="volt" aria-pressed="true"><span class="sw" style="--c:#9bc53d"></span>Volt Lime</button>
-        <button class="flavour-btn" data-flavour="berry" aria-pressed="false"><span class="sw" style="--c:#6a56b0"></span>Midnight Berry</button>
-        <button class="flavour-btn" data-flavour="glacier" aria-pressed="false"><span class="sw" style="--c:#3f8f98"></span>Glacier Mint</button>
-        <button class="flavour-btn" data-flavour="ember" aria-pressed="false"><span class="sw" style="--c:#c0673a"></span>Ember Citrus</button>
-      </div>
-    </section>
+      </article>
+
+      <article class="section chapter" data-flavour="glacier" data-scene="work">
+        <div class="chapter-pose approach" data-pose='{"x":0.33,"y":-0.02,"fh":0.72,"tilt":-0.05,"face":1,"turn":6.2832,"cap":0,"drain":0,"fill":1}' data-pose-m='{"y":0.3,"fh":0.4,"tilt":-0.04,"face":1,"fill":1}'></div>
+        <div class="chapter-pose sip" data-pose='{"x":0.3,"y":0.34,"fh":1.2,"tilt":0.86,"face":1,"turn":6.2832,"cap":0,"drain":0,"fill":0.72}' data-pose-m='{"y":0.36,"fh":0.66,"tilt":0.6,"face":1,"fill":0.72}'></div>
+        <div class="chapter-copy">
+          <p class="chapter-time"><span>09:00</span> The office</p>
+          <h2 class="chapter-name">Glacier Mint</h2>
+          <p class="chapter-line">Inbox open. Head clear.</p>
+          <p class="lede">Cold mint and white grape. Clean, crisp and quiet, for the hours that need your full attention.</p>
+          <div class="btn-row">
+            <button class="btn btn-primary magnetic" type="button" data-add-to-cart="glacier">Add Glacier Mint</button>
+            <a class="btn btn-ghost" href="shop.html">Shop packs</a>
+          </div>
+        </div>
+      </article>
+
+      <article class="section chapter" data-flavour="volt" data-scene="gym">
+        <div class="chapter-pose approach" data-pose='{"x":0.33,"y":-0.02,"fh":0.72,"tilt":-0.05,"face":1,"turn":6.2832,"cap":0,"drain":0,"fill":1}' data-pose-m='{"y":0.3,"fh":0.4,"tilt":-0.04,"face":1,"fill":1}'></div>
+        <div class="chapter-pose sip" data-pose='{"x":0.3,"y":0.34,"fh":1.2,"tilt":0.86,"face":1,"turn":6.2832,"cap":0,"drain":0,"fill":0.72}' data-pose-m='{"y":0.36,"fh":0.66,"tilt":0.6,"face":1,"fill":0.72}'></div>
+        <div class="chapter-copy">
+          <p class="chapter-time"><span>18:00</span> The gym</p>
+          <h2 class="chapter-name">Volt Lime</h2>
+          <p class="chapter-line">Last set. Loudest flavour.</p>
+          <p class="lede">Sharp lime with a flash of yuzu. The original, and still the loudest thing in the fridge.</p>
+          <div class="btn-row">
+            <button class="btn btn-primary magnetic" type="button" data-add-to-cart="volt">Add Volt Lime</button>
+            <a class="btn btn-ghost" href="shop.html">Shop packs</a>
+          </div>
+        </div>
+      </article>
+
+      <article class="section chapter" data-flavour="berry" data-scene="desk">
+        <div class="chapter-pose approach" data-pose='{"x":0.33,"y":-0.02,"fh":0.72,"tilt":-0.05,"face":1,"turn":6.2832,"cap":0,"drain":0,"fill":1}' data-pose-m='{"y":0.3,"fh":0.4,"tilt":-0.04,"face":1,"fill":1}'></div>
+        <div class="chapter-pose sip" data-pose='{"x":0.3,"y":0.34,"fh":1.2,"tilt":0.86,"face":1,"turn":6.2832,"cap":0,"drain":0,"fill":0.72}' data-pose-m='{"y":0.36,"fh":0.66,"tilt":0.6,"face":1,"fill":0.72}'></div>
+        <div class="chapter-copy">
+          <p class="chapter-time"><span>22:00</span> The home desk</p>
+          <h2 class="chapter-name">Midnight Berry</h2>
+          <p class="chapter-line">One more build before bed.</p>
+          <p class="lede">Blackcurrant and wild blueberry, cooled down. Made for late sessions.</p>
+          <div class="btn-row">
+            <button class="btn btn-primary magnetic" type="button" data-add-to-cart="berry">Add Midnight Berry</button>
+            <a class="btn btn-ghost" href="shop.html">Shop packs</a>
+          </div>
+        </div>
+      </article>
+    </div>
 
     <!-- CAP -->
     <section class="section feature" data-pose='{"x":0.4,"y":-0.04,"fh":0.68,"tilt":-0.06,"cap":1}' data-pose-m='{"y":0.42,"fh":0.36,"cap":1}'>
@@ -226,6 +312,11 @@
     <div class="logo">PRIMO<span class="dot"></span></div>
     <p>PRIMO is a fictional brand made for a design and interaction demo. Not a real product.</p>
     <p class="muted">© 2026 Demo build</p>
+    <p class="credits muted">Scene photos via Unsplash:
+      <a href="https://unsplash.com/@ventiviews" rel="noopener" target="_blank">@ventiviews</a>,
+      <a href="https://unsplash.com/@frantic" rel="noopener" target="_blank">@frantic</a>,
+      <a href="https://unsplash.com/@lukewitter" rel="noopener" target="_blank">Luke Witter</a>,
+      <a href="https://unsplash.com/@nrjwolf" rel="noopener" target="_blank">@nrjwolf</a>.</p>
   </footer>
 </body>
 </html>

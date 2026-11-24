@@ -1,0 +1,150 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Feedback — Tell PRIMO how it tasted</title>
+  <meta name="description" content="Rate a PRIMO flavour and tell us what to change. Demo form: nothing is sent.">
+  <meta name="theme-color" content="#0b0d08">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%23090a0d'/%3E%3Ccircle cx='16' cy='16' r='6' fill='%23c8ff2e'/%3E%3C/svg%3E">
+  <script>(function(){try{var a={volt:'#c8ff2e',berry:'#b3a3ff',glacier:'#8fe3dc',ember:'#ffae78'},t={volt:'#0b0d08',berry:'#0c0b14',glacier:'#080d0f',ember:'#100b09'},f=localStorage.getItem('primo:flavour');if(a[f]){var s=document.documentElement.style;s.setProperty('--accent',a[f]);s.setProperty('--ink',a[f]);s.setProperty('--tint',t[f]);}}catch(e){}})();</script>
+  <link rel="preload" href="fonts/spacegrotesk-V8mDoQDjQSkFtoMM3T6r8E7mPbF4C_k3HqU.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="fonts/fonts.css">
+  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="pages.css">
+  <script src="cart.js" defer></script>
+  <script src="pages.js" defer></script>
+</head>
+<body class="page" data-page="feedback">
+  <a class="sr-only skip" href="#main">Skip to content</a>
+  <nav class="nav" id="nav">
+    <a class="brand" href="index.html">PRIMO<span>.</span></a>
+    <div class="nav-links">
+      <a href="index.html#flavours">Flavours</a>
+      <a href="about.html">About</a>
+      <a href="feedback.html" aria-current="page">Feedback</a>
+    </div>
+    <a class="nav-cart" href="shop.html" aria-label="Cart">Cart <span class="nav-cart-count" data-cart-count>0</span></a>
+  </nav>
+
+  <main class="pg-main fb-wrap" id="main">
+    <div class="wrap fb-grid">
+      <div class="fb-intro">
+        <span class="pg-kicker" data-reveal>Feedback</span>
+        <h1 class="display" data-reveal style="--d:.08s">How did it <span class="accent">taste?</span></h1>
+        <p class="lede" data-reveal style="--d:.16s">Every flavour we've made changed because someone told us it was too sweet, too flat or not cold enough. Two minutes. Be blunt.</p>
+        <div class="stage" data-tilt data-reveal style="--d:.24s"><div class="stage-inner" data-bottle="theme"></div><div class="spot" aria-hidden="true"></div></div>
+      </div>
+
+      <div class="glass fb-card" data-reveal style="--d:.1s">
+        <form class="fb-form" id="fbForm" novalidate>
+          <div class="err-summary" id="fbErrors" role="alert" tabindex="-1" hidden></div>
+
+          <fieldset class="fb-field" id="field-flavour">
+            <legend class="field-label">Which flavour?</legend>
+            <div class="swatches">
+              <label class="swatch sw-volt"><input type="radio" name="fbFlavour" value="volt"><span>Volt</span></label>
+              <label class="swatch sw-berry"><input type="radio" name="fbFlavour" value="berry"><span>Berry</span></label>
+              <label class="swatch sw-glacier"><input type="radio" name="fbFlavour" value="glacier"><span>Glacier</span></label>
+              <label class="swatch sw-ember"><input type="radio" name="fbFlavour" value="ember"><span>Ember</span></label>
+            </div>
+          </fieldset>
+
+          <fieldset class="fb-field" id="field-rating" data-field="rating" aria-describedby="err-rating">
+            <legend class="field-label">Overall rating <span class="req" aria-hidden="true">*</span><span class="sr-only">(required)</span></legend>
+            <div class="rating">
+              <input type="radio" name="rating" id="r1" value="1"><label for="r1" data-v="1"><span class="sr-only">1 out of 5, not for me</span><svg viewBox="0 0 34 44" aria-hidden="true"><path class="drop" d="M17 2C17 2 3 18 3 28a14 14 0 0 0 28 0C31 18 17 2 17 2z"/></svg></label>
+              <input type="radio" name="rating" id="r2" value="2"><label for="r2" data-v="2"><span class="sr-only">2 out of 5, it's okay</span><svg viewBox="0 0 34 44" aria-hidden="true"><path class="drop" d="M17 2C17 2 3 18 3 28a14 14 0 0 0 28 0C31 18 17 2 17 2z"/></svg></label>
+              <input type="radio" name="rating" id="r3" value="3"><label for="r3" data-v="3"><span class="sr-only">3 out of 5, pretty good</span><svg viewBox="0 0 34 44" aria-hidden="true"><path class="drop" d="M17 2C17 2 3 18 3 28a14 14 0 0 0 28 0C31 18 17 2 17 2z"/></svg></label>
+              <input type="radio" name="rating" id="r4" value="4"><label for="r4" data-v="4"><span class="sr-only">4 out of 5, really good</span><svg viewBox="0 0 34 44" aria-hidden="true"><path class="drop" d="M17 2C17 2 3 18 3 28a14 14 0 0 0 28 0C31 18 17 2 17 2z"/></svg></label>
+              <input type="radio" name="rating" id="r5" value="5"><label for="r5" data-v="5"><span class="sr-only">5 out of 5, obsessed</span><svg viewBox="0 0 34 44" aria-hidden="true"><path class="drop" d="M17 2C17 2 3 18 3 28a14 14 0 0 0 28 0C31 18 17 2 17 2z"/></svg></label>
+              <span class="rating-word" id="ratingWord" aria-hidden="true">Tap a drop to rate</span>
+            </div>
+            <p class="err" id="err-rating" hidden></p>
+          </fieldset>
+
+          <div class="fb-field" id="field-sweet">
+            <label class="field-label" for="sweet">Sweetness · <span class="range-out" id="sweetOut">Just right</span></label>
+            <input class="range" type="range" id="sweet" name="sweet" min="0" max="100" value="50" step="1">
+            <div class="range-scale" aria-hidden="true"><span>Too subtle</span><span>Just right</span><span>Too sweet</span></div>
+          </div>
+
+          <fieldset class="fb-field" id="field-nps" data-field="nps" aria-describedby="err-nps">
+            <legend class="field-label">How likely are you to recommend PRIMO to a friend? <span class="req" aria-hidden="true">*</span><span class="sr-only">(required, 0 is not at all likely, 10 is extremely likely)</span></legend>
+            <div class="nps">
+              <label><input type="radio" name="nps" value="0"><span>0</span></label>
+              <label><input type="radio" name="nps" value="1"><span>1</span></label>
+              <label><input type="radio" name="nps" value="2"><span>2</span></label>
+              <label><input type="radio" name="nps" value="3"><span>3</span></label>
+              <label><input type="radio" name="nps" value="4"><span>4</span></label>
+              <label><input type="radio" name="nps" value="5"><span>5</span></label>
+              <label><input type="radio" name="nps" value="6"><span>6</span></label>
+              <label><input type="radio" name="nps" value="7"><span>7</span></label>
+              <label><input type="radio" name="nps" value="8"><span>8</span></label>
+              <label><input type="radio" name="nps" value="9"><span>9</span></label>
+              <label><input type="radio" name="nps" value="10"><span>10</span></label>
+            </div>
+            <div class="nps-scale" aria-hidden="true"><span>Not likely</span><span>Extremely likely</span></div>
+            <p class="err" id="err-nps" hidden></p>
+          </fieldset>
+
+          <fieldset class="fb-field" id="field-tags">
+            <legend class="field-label">What stood out? <span class="muted" style="text-transform:none;letter-spacing:0;font-weight:500">Pick any</span></legend>
+            <div class="chips">
+              <label class="chip"><input type="checkbox" name="tags" value="Refreshing"><span>Refreshing</span></label>
+              <label class="chip"><input type="checkbox" name="tags" value="Great after training"><span>Great after training</span></label>
+              <label class="chip"><input type="checkbox" name="tags" value="Bold flavour"><span>Bold flavour</span></label>
+              <label class="chip"><input type="checkbox" name="tags" value="Too sweet"><span>Too sweet</span></label>
+              <label class="chip"><input type="checkbox" name="tags" value="Not sweet enough"><span>Not sweet enough</span></label>
+              <label class="chip"><input type="checkbox" name="tags" value="Aftertaste"><span>Aftertaste</span></label>
+              <label class="chip"><input type="checkbox" name="tags" value="Love the bottle"><span>Love the bottle</span></label>
+              <label class="chip"><input type="checkbox" name="tags" value="Price"><span>Price</span></label>
+            </div>
+          </fieldset>
+
+          <div class="fb-field" id="field-message">
+            <label class="field-label" for="fbMsg">Anything else?</label>
+            <textarea class="input textarea" id="fbMsg" name="message" maxlength="500" placeholder="Tell us what to keep, change or never do again." aria-describedby="fbCount"></textarea>
+            <span class="count" id="fbCount" aria-live="polite">0 / 500</span>
+          </div>
+
+          <div class="fb-field" id="field-email" data-field="email">
+            <label class="field-label" for="fbEmail">Email <span class="muted" style="text-transform:none;letter-spacing:0;font-weight:500">optional, only if you want a reply</span></label>
+            <input class="input" type="email" id="fbEmail" name="email" autocomplete="email" placeholder="you@example.com" aria-describedby="err-email">
+            <p class="err" id="err-email" hidden></p>
+          </div>
+
+          <div class="fb-actions">
+            <button class="btn btn-primary" type="submit">Send feedback</button>
+            <span class="muted" style="font-size:13px">Demo form: nothing is sent or stored.</span>
+          </div>
+        </form>
+
+        <div class="fb-success" id="fbSuccess" hidden>
+          <div class="check-ring" aria-hidden="true"><svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></div>
+          <h2 class="h2" id="okTitle" tabindex="-1" style="font-size:clamp(34px,4vw,56px)">Thanks. That helps.</h2>
+          <p class="demo-banner"><strong>Demo: nothing was sent.</strong> Your answers stayed in this browser tab and were cleared from the form. PRIMO is a fictional brand.</p>
+          <dl class="recap">
+            <div><dt>Flavour</dt><dd id="okFlavour"></dd></div>
+            <div><dt>Rating</dt><dd id="okRating"></dd></div>
+            <div><dt>Sweetness</dt><dd id="okSweet"></dd></div>
+            <div><dt>Recommend</dt><dd id="okNps"></dd></div>
+            <div><dt>Stood out</dt><dd id="okTags"></dd></div>
+          </dl>
+          <div class="btn-row">
+            <button class="btn btn-ghost" type="button" id="fbAgain">Send another</button>
+            <a class="btn btn-primary" href="shop.html">Back to the shop</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <footer class="footer">
+    <div class="logo">PRIMO<span class="dot"></span></div>
+    <p>PRIMO is a fictional brand made for a design and interaction demo. Not a real product.</p>
+    <nav class="pg-foot-links" aria-label="Footer"><a href="index.html">Home</a><a href="shop.html">Shop</a><a href="about.html">About</a></nav>
+    <p class="muted">© 2026 Demo build</p>
+  </footer>
+</body>
+</html>
