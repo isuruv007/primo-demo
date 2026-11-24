@@ -1,0 +1,231 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>PRIMO — Hydration, re-engineered</title>
+  <meta name="description" content="PRIMO is a fictional hydration drink brand — a design and interaction demo.">
+  <meta name="theme-color" content="#090a0d">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%23090a0d'/%3E%3Ccircle cx='16' cy='16' r='6' fill='%23c8ff2e'/%3E%3C/svg%3E">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+  <script type="importmap">
+    {
+      "imports": {
+        "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js",
+        "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/"
+      }
+    }
+  </script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js" defer></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js" defer></script>
+  <script src="https://unpkg.com/lenis@1.1.13/dist/lenis.min.js" defer></script>
+  <script type="module" src="main.js"></script>
+</head>
+<body>
+  <div class="loader" id="loader" aria-hidden="true">
+    <div class="loader-mark">PRIMO<span class="dot"></span></div>
+    <div class="loader-bar"><span></span></div>
+  </div>
+
+  <div class="bg" aria-hidden="true"></div>
+  <canvas id="scene" aria-hidden="true"></canvas>
+  <div class="grain" aria-hidden="true"></div>
+  <div class="progress" aria-hidden="true"></div>
+
+  <header class="nav" id="nav">
+    <a href="#top" class="logo" aria-label="PRIMO home">PRIMO<span class="dot"></span></a>
+    <nav aria-label="Primary">
+      <ul class="nav-links">
+        <li><a href="#inside">Inside</a></li>
+        <li><a href="#flavours">Flavours</a></li>
+        <li><a href="#why">Numbers</a></li>
+      </ul>
+    </nav>
+    <a href="#join" class="btn btn-primary btn-sm magnetic">Get early access</a>
+  </header>
+
+  <main id="top">
+    <!-- HERO: the bottle is the logo -->
+    <section class="section hero"
+      data-pose='{"x":0.02,"y":0.04,"tilt":-1.2,"fw":1.1,"cap":0.5,"face":1,"turn":0,"focus":1}'
+      data-pose-m='{"y":0.0,"tilt":-1.1,"fw":1.3,"cap":0.5,"focus":1}'>
+      <h1 class="sr-only">PRIMO electrolyte hydration drink</h1>
+      <svg class="fallback-bottle" viewBox="0 0 120 300" aria-hidden="true">
+        <rect x="42" y="4" width="36" height="30" rx="5" fill="#16181d"/>
+        <path d="M46 34h28v14c18 10 30 22 30 40v196a12 12 0 0 1-12 12H28a12 12 0 0 1-12-12V88c0-18 12-30 30-40z" fill="#4f6a12"/>
+        <rect x="16" y="100" width="88" height="160" fill="#12150c"/>
+        <text x="0" y="0" transform="translate(66 180) rotate(-90)" text-anchor="middle" font-family="Space Grotesk" font-weight="700" font-size="30" fill="#eceef2">PRIMO</text>
+      </svg>
+      <div class="hero-top">
+        <p class="kicker" data-intro><span class="dot"></span>Electrolyte hydration · Drop 01</p>
+        <p class="hero-line" data-intro>Hydration,<br>re‑engineered.</p>
+      </div>
+      <div class="hero-bottom">
+        <p data-intro>Electrolytes, coconut water and zero added sugar, in a bottle built to be seen.</p>
+        <div class="btn-row" data-intro>
+          <a href="#join" class="btn btn-primary magnetic">Join the drop</a>
+          <a href="#flavours" class="btn btn-ghost">Explore flavours</a>
+        </div>
+      </div>
+      <div class="scroll-cue" aria-hidden="true"><span></span></div>
+    </section>
+
+    <!-- REVEAL: spin, assemble, pull back to full view -->
+    <section class="section reveal" id="meet"
+      data-pose='{"x":0,"y":-0.02,"fh":0.8,"face":1}'
+      data-pose-m='{"y":0.24,"fh":0.44}'>
+      <div class="reveal-left">
+        <p class="kicker" data-reveal><span class="dot"></span>Meet PRIMO</p>
+        <h2 data-split>Built to be seen.</h2>
+      </div>
+      <div class="reveal-right" data-reveal>
+        <p class="lede">500 mL of electrolyte hydration in a crystal‑clear bottle with a knurled quarter‑turn cap. What’s inside is the whole point, so here’s a closer look.</p>
+      </div>
+    </section>
+
+    <!-- DIVE: zoom into the liquid -->
+    <section class="section dive" id="inside"
+      data-pose='{"x":0,"y":-0.02,"fh":0.8,"face":1,"dive":1}'
+      data-pose-m='{"y":0.2,"fh":0.5,"dive":1}'>
+      <div class="dive-copy">
+        <p class="kicker" data-reveal><span class="dot"></span>Inside the bottle</p>
+        <h2 data-split>Now, look closer.</h2>
+      </div>
+    </section>
+
+    <section class="section ingredient"
+      data-pose='{"fh":0.8,"face":1,"dive":1,"drain":0.32,"fill":0.68}' data-pose-m='{"fh":0.5,"dive":1}'>
+      <div class="ing-figure" aria-hidden="true" data-reveal>10<span>%</span></div>
+      <div class="ing-copy">
+        <p class="kicker" data-reveal><span class="dot"></span>01 · Coconut water</p>
+        <h2 data-split>Naturally light. Naturally sweet.</h2>
+        <p class="lede" data-reveal>Ten percent real coconut water gives PRIMO a clean, light body and a little natural potassium. There are no syrups and no concentrates.</p>
+      </div>
+    </section>
+
+    <section class="section ingredient flip"
+      data-pose='{"fh":0.8,"face":1,"dive":1,"drain":0.62,"fill":0.38}' data-pose-m='{"fh":0.5,"dive":1}'>
+      <div class="ing-figure" aria-hidden="true" data-reveal>830<span>mg</span></div>
+      <div class="ing-copy">
+        <p class="kicker" data-reveal><span class="dot"></span>02 · Electrolytes</p>
+        <h2 data-split>What you sweat, put back.</h2>
+        <p class="lede" data-reveal>Sodium, potassium and magnesium in the ratio your body actually loses, so you stay sharp from the first set to the last.</p>
+        <ul class="chips" data-reveal><li>Sodium</li><li>Potassium</li><li>Magnesium</li></ul>
+      </div>
+    </section>
+
+    <section class="section ingredient"
+      data-pose='{"fh":0.8,"face":1,"dive":1,"drain":0.9,"fill":0.1}' data-pose-m='{"fh":0.5,"dive":1}'>
+      <div class="ing-figure" aria-hidden="true" data-reveal>0<span>g</span></div>
+      <div class="ing-copy">
+        <p class="kicker" data-reveal><span class="dot"></span>03 · Zero added sugar</p>
+        <h2 data-split>All lift. No crash.</h2>
+        <p class="lede" data-reveal>Twenty‑five calories, B3, B6 and B12, and no added sugar. It tastes like a treat and works like a tool.</p>
+        <ul class="chips" data-reveal><li>B‑vitamins</li><li>25 kcal</li><li>Vegan</li></ul>
+      </div>
+    </section>
+
+    <!-- EMPTY: pulled back out, bottle drained -->
+    <section class="section reveal empty"
+      data-pose='{"x":0,"y":-0.02,"fh":0.8,"face":1,"turn":9.4248,"cap":1,"drain":1,"fill":0}'
+      data-pose-m='{"y":0.24,"fh":0.44}'>
+      <div class="reveal-left">
+        <p class="kicker" data-reveal><span class="dot"></span>Empty already?</p>
+        <h2 data-split>That went fast.</h2>
+      </div>
+      <div class="reveal-right" data-reveal>
+        <p class="lede">25 calories and 830mg of electrolytes, gone in a few scrolls. It happens.</p>
+      </div>
+    </section>
+
+    <!-- REFILL -->
+    <section class="section reveal refill"
+      data-pose='{"x":0,"y":-0.02,"fh":0.8,"face":1,"turn":9.4248,"cap":0,"drain":1,"fill":1}'
+      data-pose-m='{"y":0.24,"fh":0.44}'>
+      <div class="reveal-left">
+        <p class="kicker" data-reveal><span class="dot"></span>Refill</p>
+        <h2 data-split>Again? Always.</h2>
+      </div>
+      <div class="reveal-right" data-reveal>
+        <p class="lede">The clear window on the back shows exactly how much is left. Pick your next flavour below.</p>
+      </div>
+    </section>
+
+    <!-- MARQUEE: surfacing -->
+    <div class="marquee" aria-hidden="true">
+      <div class="track">
+        <span>Zero added sugar</span><i>✦</i><span>10% coconut water</span><i>✦</i><span>830mg electrolytes</span><i>✦</i><span>B‑vitamin complex</span><i>✦</i>
+        <span>Zero added sugar</span><i>✦</i><span>10% coconut water</span><i>✦</i><span>830mg electrolytes</span><i>✦</i><span>B‑vitamin complex</span><i>✦</i>
+      </div>
+    </div>
+
+    <!-- FLAVOURS -->
+    <section class="section flavours" id="flavours"
+      data-pose='{"x":0,"y":0,"fh":0.74,"face":1}'
+      data-pose-m='{"y":0.4,"fh":0.36,"face":1}'>
+      <div class="flavour-copy">
+        <p class="kicker" data-reveal><span class="dot"></span>Flavours</p>
+        <h2 data-split>Four flavours. One standard.</h2>
+        <div class="flavour-detail" data-reveal aria-live="polite">
+          <h3 id="flavourName">Volt Lime</h3>
+          <p id="flavourDesc">Sharp lime with a flash of yuzu. The original, and still the loudest thing in the fridge.</p>
+        </div>
+      </div>
+      <div class="flavour-list" role="group" aria-label="Choose a flavour" data-reveal>
+        <button class="flavour-btn" data-flavour="volt" aria-pressed="true"><span class="sw" style="--c:#9bc53d"></span>Volt Lime</button>
+        <button class="flavour-btn" data-flavour="berry" aria-pressed="false"><span class="sw" style="--c:#6a56b0"></span>Midnight Berry</button>
+        <button class="flavour-btn" data-flavour="glacier" aria-pressed="false"><span class="sw" style="--c:#3f8f98"></span>Glacier Mint</button>
+        <button class="flavour-btn" data-flavour="ember" aria-pressed="false"><span class="sw" style="--c:#c0673a"></span>Ember Citrus</button>
+      </div>
+    </section>
+
+    <!-- CAP -->
+    <section class="section feature" data-pose='{"x":0.4,"y":-0.04,"fh":0.68,"tilt":-0.06,"cap":1}' data-pose-m='{"y":0.42,"fh":0.36,"cap":1}'>
+      <div class="copy">
+        <p class="kicker" data-reveal><span class="dot"></span>The cap</p>
+        <h2 data-split>Twist. Sip. Go.</h2>
+        <p class="lede" data-reveal>A quarter‑turn cap with a wide‑bore spout. It opens with one hand mid‑set and reseals without leaking.</p>
+        <ul class="chips" data-reveal><li>Quarter‑turn</li><li>Leak‑proof</li><li>100% recyclable</li></ul>
+      </div>
+    </section>
+
+    <!-- NUMBERS -->
+    <section class="section stats" id="why" data-pose='{"x":0.5,"y":0,"fh":0.6,"tilt":-0.18}' data-pose-m='{"y":0.45,"fh":0.3}'>
+      <div class="stats-inner">
+        <p class="kicker" data-reveal><span class="dot"></span>By the numbers</p>
+        <h2 data-split>Less in it. More out of it.</h2>
+        <dl class="stat-grid">
+          <div class="stat" data-reveal><dt>Added sugar</dt><dd><span data-count="0">0</span><small>g</small></dd></div>
+          <div class="stat" data-reveal><dt>Electrolytes</dt><dd><span data-count="830">830</span><small>mg</small></dd></div>
+          <div class="stat" data-reveal><dt>Coconut water</dt><dd><span data-count="10">10</span><small>%</small></dd></div>
+          <div class="stat" data-reveal><dt>Calories</dt><dd><span data-count="25">25</span><small>kcal</small></dd></div>
+        </dl>
+      </div>
+    </section>
+
+    <!-- JOIN -->
+    <section class="section join" id="join" data-pose='{"x":-0.48,"y":0,"fh":0.7,"tilt":0.1}' data-pose-m='{"y":0.42,"fh":0.32}'>
+      <div class="join-card" data-reveal>
+        <p class="kicker"><span class="dot"></span>Drop 01</p>
+        <h2>Be first to the fridge.</h2>
+        <p class="lede">Drop 01 is limited. Join the list for early access and first pick of flavours.</p>
+        <form class="join-form" id="joinForm" novalidate>
+          <label class="sr-only" for="email">Email address</label>
+          <input id="email" name="email" type="email" placeholder="you@email.com" autocomplete="email" required>
+          <button class="btn btn-primary magnetic" type="submit">Join the list</button>
+        </form>
+        <p class="form-msg" id="formMsg" role="status" aria-live="polite"></p>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <div class="logo">PRIMO<span class="dot"></span></div>
+    <p>PRIMO is a fictional brand made for a design and interaction demo. Not a real product.</p>
+    <p class="muted">© 2026 Demo build</p>
+  </footer>
+</body>
+</html>
